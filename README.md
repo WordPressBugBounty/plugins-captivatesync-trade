@@ -1,0 +1,1 @@
+# plugins-captivatesync-trade
