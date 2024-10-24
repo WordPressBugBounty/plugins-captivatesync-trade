@@ -2,8 +2,8 @@
 Contributors: Kieran McKeefery, Mark Asquith, Captivate Audio Ltd
 Tags: podcast, podcasting, podcaster, itunes, captivate, CaptivateFM, powerpress, blubrry, Buzzsprout, Libsyn
 Requires at least: 4.8.0
-Tested up to: 6.1
-Stable tag: 2.0.22
+Tested up to: 6.6.2
+Stable tag: 2.0.26
 
 Captivate Sync™ is a WordPress plugin maintained and developed by Captivate, part of the Rebel Base Media family. With our background in Podcast Websites, WordPress development and podcast hosting, hundreds of independent podcasters trust Captivate Sync™ and Captivate to power their podcast brands everyday.
 
@@ -102,6 +102,24 @@ To install Captivate Sync™ manually, please follow these steps:
 2. List of your episodes that are synced to your website.
 
 == Changelog ==
+
+= 2.0.26 =
+* Released on 14/10/2024
+* Removed iTunes Summary field
+* Bug fix: Resolved an issue where the SEO Description field was not properly validating the maximum length of 300 characters, leading to a white screen error.
+
+= 2.0.25 =
+* Released on 07/06/2024
+* Bug fix: Alternate RSS Feed will only appear on page mapped for each podcast
+* Security Improvement: Addressed a vulnerability in the shortcode implementation
+
+= 2.0.24 =
+* Released on 23/04/2024
+* Added support for og:audio on single episode pages
+
+= 2.0.23 =
+* Released on 06/03/2024
+* Bug fix: Auto-sync via webhook not working correctly
 
 = 2.0.22 =
 * Released on 01/06/2023

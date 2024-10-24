@@ -60,7 +60,7 @@ if ( ! function_exists( 'cfm_get_show_page' ) ) :
 			}
 		}
 
-		$index_page = ( $show_id ) ? $show_ids[ $show_id ] : '0';
+		$index_page = ( cfm_is_show_exists( $show_id ) ) ? $show_ids[ $show_id ] : '0';
 
 		if ( 'slug' === $option ) {
 			$page = ( '0' == $index_page || '' == $index_page ) ? 'captivate-podcast' : get_post_field( 'post_name', $index_page );
@@ -453,6 +453,11 @@ if ( ! function_exists( 'cfm_sync_shows' ) ) :
 				)
 			);
 
+			// update prefixes.
+			if ( ! empty($show->prefixes) && '[]' != $show->prefixes ) {
+				cfm_update_show_info( $show->id, 'prefixes', sanitize_text_field( $show->prefixes ) );
+			}
+
 			// Debugging.
 			if ( cfm_is_debugging_on() ) {
 				$log_date = date( 'Y-m-d H:i:s', time() );
@@ -637,12 +642,6 @@ if ( ! function_exists( 'cfm_sync_shows' ) ) :
 									update_post_meta( $pid, 'cfm_episode_itunes_subtitle', $itunes_subtitle );
 								}
 
-								// summary.
-								$summary = $captivate_episodes_data[ $cfm_episode_id ]['summary'];
-								if ( get_post_meta( $pid, 'cfm_episode_itunes_summary', true ) !== $summary ) {
-									update_post_meta( $pid, 'cfm_episode_itunes_summary', $summary );
-								}
-
 								// episode_season.
 								$episode_season = $captivate_episodes_data[ $cfm_episode_id ]['episode_season'];
 								if ( get_post_meta( $pid, 'cfm_episode_itunes_season', true ) !== $episode_season ) {
@@ -795,7 +794,6 @@ if ( ! function_exists( 'cfm_sync_shows' ) ) :
 							update_post_meta( $inserted_pid, 'cfm_episode_artwork', $result['episode_art'] );
 							update_post_meta( $inserted_pid, 'cfm_episode_itunes_title', $itunes_title );
 							update_post_meta( $inserted_pid, 'cfm_episode_itunes_subtitle', $result['itunes_subtitle'] );
-							update_post_meta( $inserted_pid, 'cfm_episode_itunes_summary', $result['summary'] );
 							update_post_meta( $inserted_pid, 'cfm_episode_itunes_season', $result['episode_season'] );
 							update_post_meta( $inserted_pid, 'cfm_episode_itunes_number', $result['episode_number'] );
 							update_post_meta( $inserted_pid, 'cfm_episode_itunes_type', $result['episode_type'] );
@@ -987,12 +985,6 @@ function cfm_sync_wp_episode( $episode_id, $syncKey = false ) {
 				$itunes_subtitle = $captivate_episode_data['itunes_subtitle'];
 				if ( get_post_meta( $pid, 'cfm_episode_itunes_subtitle', true ) !== $itunes_subtitle ) {
 					update_post_meta( $pid, 'cfm_episode_itunes_subtitle', $itunes_subtitle );
-				}
-
-				// summary.
-				$summary = $captivate_episode_data['summary'];
-				if ( get_post_meta( $pid, 'cfm_episode_itunes_summary', true ) !== $summary ) {
-					update_post_meta( $pid, 'cfm_episode_itunes_summary', $summary );
 				}
 
 				// episode_season.
@@ -1281,12 +1273,6 @@ if ( ! function_exists( 'cfm_get_new_episodes' ) ) :
 										update_post_meta( $pid, 'cfm_episode_itunes_subtitle', $itunes_subtitle );
 									}
 
-									// summary.
-									$summary = $captivate_episodes_data[ $cfm_episode_id ]['summary'];
-									if ( get_post_meta( $pid, 'cfm_episode_itunes_summary', true ) !== $summary ) {
-										update_post_meta( $pid, 'cfm_episode_itunes_summary', $summary );
-									}
-
 									// episode_season.
 									$episode_season = $captivate_episodes_data[ $cfm_episode_id ]['episode_season'];
 									if ( get_post_meta( $pid, 'cfm_episode_itunes_season', true ) !== $episode_season ) {
@@ -1397,7 +1383,6 @@ if ( ! function_exists( 'cfm_get_new_episodes' ) ) :
 								update_post_meta( $inserted_pid, 'cfm_episode_artwork', $result['episode_art'] );
 								update_post_meta( $inserted_pid, 'cfm_episode_itunes_title', $itunes_title );
 								update_post_meta( $inserted_pid, 'cfm_episode_itunes_subtitle', $result['itunes_subtitle'] );
-								update_post_meta( $inserted_pid, 'cfm_episode_itunes_summary', $result['summary'] );
 								update_post_meta( $inserted_pid, 'cfm_episode_itunes_season', $result['episode_season'] );
 								update_post_meta( $inserted_pid, 'cfm_episode_itunes_number', $result['episode_number'] );
 								update_post_meta( $inserted_pid, 'cfm_episode_itunes_type', $result['episode_type'] );
@@ -1672,3 +1657,47 @@ add_filter( 'post_type_link', function ( $post_link, $post, $leavename, $sample 
 
 	return $post_link;
 }, 999, 4 );
+
+/**
+ * Add third-party analytics prefixes to the media url
+ *
+ */
+function cfm_add_media_prefixes( $show_id, $media_url ) {
+
+	$prefixes = cfm_get_show_info( $show_id, 'prefixes' );
+	$prefixes = ! empty( $prefixes ) ? json_decode( $prefixes ) : [];
+    $chain_of_prefixes = false;
+
+    if ( count( $prefixes ) > 0 ) {
+        $last_char_orig = substr($prefixes[0]->prefixUrl, -1 );
+        if ( $last_char_orig != '/' ) {
+            $chain_of_prefixes = $prefixes[0]->prefixUrl . '/';
+        }
+		else {
+            $chain_of_prefixes = $prefixes[0]->prefixUrl;
+        }
+    }
+
+    if ( count( $prefixes ) > 1 ) {
+        foreach ( $prefixes as $index => $prefix ) {
+            if ( $index != 0 ) {
+                $prefix->prefixUrl = str_replace( 'https://', '', $prefix->prefixUrl );
+                $prefix->prefixUrl = str_replace( 'http://', '', $prefix->prefixUrl );
+                $last_char = substr( $prefix->prefixUrl, -1 );
+                if ( $last_char != '/' ) {
+                    $chain_of_prefixes = $chain_of_prefixes . $prefix->prefixUrl . '/';
+                }
+				else {
+                    $chain_of_prefixes = $chain_of_prefixes . $prefix->prefixUrl;
+                }
+            }
+        }
+    }
+
+    $result = $media_url;
+    if ( $chain_of_prefixes ) {
+        $result = str_replace( 'https://', $chain_of_prefixes, $result );
+    }
+
+    return $result;
+}

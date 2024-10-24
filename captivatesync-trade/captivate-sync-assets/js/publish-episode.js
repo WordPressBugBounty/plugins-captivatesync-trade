@@ -252,19 +252,6 @@ jQuery( document ).ready(
 			}
 		);
 
-		/**
-		 * Would you like to use an iTunes episode summary?
-		 */
-		$( '#itunes_summary_check' ).change(
-			function(){
-				if ($( '#itunes_summary_check:checked' ).length == $( '#itunes_summary_check' ).length) {
-					$( '.cfm-field.cfm-itunes-summary' ).fadeIn( 200 );
-				} else {
-					$( '.cfm-field.cfm-itunes-summary' ).fadeOut( 200 );
-				}
-			}
-		);
-
 		$( '.btn-number' ).click(
 			function(e){
 				e.preventDefault();
@@ -602,9 +589,11 @@ jQuery( document ).ready(
 
 			var post_title 	 = $( '#post_title' ).val(),
 			shownotes        = $( 'textarea[name=post_content]' ).val(),
+			seo_description  = $('#seoDescription').val(),
 			wordpress_editor_shownotes = tinymce.activeEditor.getContent(),
 			media_id         = $( 'input[name=media_id]' ).val(),
 			errors           = 0;
+
 			if ( media_id == '' && clicked_button != "episode_draft") {
 				$( '#upload-audio' ).addClass( 'cfm-field-error' );
 				if ( ! $( '#upload-audio-error' ).length ) {
@@ -631,6 +620,16 @@ jQuery( document ).ready(
 				$( '#wp-post_content_wp-wrap' ).addClass( 'cfm-field-error' );
 				if ( ! $( '#wp-shownotes-error' ).length ) {
 					$( '<div id="wp-shownotes-error" class="cfm-field-error-text">You must enter show notes for your episode.</div>' ).insertAfter( '#wp-post_content_wp-wrap' );
+				}
+				errors += 1;
+			}
+
+			console.log(seo_description.length);
+
+			if ( seo_description.length > 300 ) {
+				$('#seoDescription').addClass('is-invalid');
+				if ( ! $( '#seoDescription-error' ).length ) {
+					$( '<div id="seoDescription-error" class="cfm-field-error-text">SEO Description: length must be less than or equal to 300 characters long.</div>' ).insertAfter( '.cfm-seo-description-count' );
 				}
 				errors += 1;
 			}
@@ -1134,16 +1133,6 @@ jQuery( document ).ready(
 				else {
 					$('#post_title_check').prop('checked', true);
 					$('#cfm-episode-details .cfm-itunes-episode-title').fadeIn();
-				}
-
-				// show itunes summary if checked.
-				const itunes_summary_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'itunesSummary');
-				if ( null === itunes_summary_local || '' == itunes_summary_local ) {
-					$('#itunes_summary_check').prop('checked', false);
-				}
-				else {
-					$('#itunes_summary_check').prop('checked', true);
-					$('#cfm-episode-details .cfm-itunes-summary').fadeIn();
 				}
 
 				// cleat tags and categories input.

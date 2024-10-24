@@ -3,7 +3,7 @@
  Plugin Name:  Captivate Sync&trade;
  Plugin URI:   https://captivate.fm/sync
  Description:  Captivate Sync&trade; is the WordPress podcasting plugin from Captivate.fm. Publish directly from your WordPress site or your Captivate podcast hosting account and stay in-sync wherever you are!
- Version:      2.0.22
+ Version:      2.0.26
  Author:       Captivate Audio Ltd
  Author URI:   https://www.captivate.fm
  **/
@@ -21,7 +21,7 @@ if ( ! defined( 'CFMH_URL' ) ) {
 }
 
 if ( ! defined( 'CFMH_VERSION' ) ) {
-	define( 'CFMH_VERSION', '2.0.22' );
+	define( 'CFMH_VERSION', '2.0.26' );
 }
 
 if ( ! defined( 'CFMH_API_URL' ) ) {
@@ -81,22 +81,69 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 			$this->_authentication();
 			$this->podcast_hosting_api = CFMH_API_URL;
 
-			add_action(
-				'rest_api_init',
-				function () {
-					register_rest_route(
-						'captivate-sync/v1',
-						'/sync',
-						array(
-							'methods'  				=> 'POST',
-							'callback' 				=> array( $this, '_captivate_sync' ),
-							'permission_callback' 	=> function () {
-						    	return current_user_can( 'edit_others_posts' );
-						    }
-						)
-					);
-				}
-			);
+			add_action( 'rest_api_init', function() {
+				register_rest_route( 'captivate-sync/v1', '/sync', array(
+					'methods'  				=> 'POST',
+					'callback' 				=> '_captivate_sync',
+					'permission_callback' 	=> function() { return ''; }
+				) );
+			} );
+
+			function _captivate_sync( $request ) {
+
+                $data     = $request->get_params();
+				$sync_key = $data['sync_key'];
+				$show_id  = $data['show_id'];
+				$episode_id = $data['episode_id'];
+				$event_operation = $data['event_operation'];
+
+    			if ( $sync_key && $show_id ) {
+
+    				$current_shows = cfm_get_show_ids();
+
+    				if ( in_array( $show_id, $current_shows ) ) {
+
+    					if ( cfm_get_show_info( $show_id, 'sync_key' ) == $sync_key ) {
+
+    					    if( $episode_id ) {
+                                // sync episodes.
+							    switch ( $event_operation ) {
+    								case 'CREATE':
+    									$sync_show = cfm_sync_shows( $show_id );
+    									break;
+    								case 'UPDATE':
+    									$sync_show = cfm_sync_wp_episode( $episode_id );
+    									break;
+    								case 'DELETE':
+    								    $sync_show = cfm_sync_shows( $show_id );
+    								    break;
+    								default:
+    									break;
+    							}
+                            } else {
+                                $sync_show = cfm_sync_shows( $show_id );
+                            }
+
+    						if ( false == $sync_show ) {
+    							echo 'ERROR: Something went wrong! Please contact the support team.';
+    						} else {
+                                if( $episode_id ) {
+                                    echo 'SUCCESS: Episode has successfully synchronised.';
+                                } else {
+                                    echo 'SUCCESS: Show has successfully synchronised.';
+                                }
+    						}
+    					} else {
+
+    						echo 'ERROR: Sync key not accepted.';
+
+    					}
+    				} else {
+    					echo 'ERROR: Show does not exist in current CaptivateSync install.';
+    				}
+    			}
+
+    		}
 
 		}
 
@@ -285,55 +332,6 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 				}
 
 			endif;
-
-		}
-
-		/**
-		 * Captivate sync
-		 *
-		 * @since 1.0
-		 *
-		 * @return string
-		 */
-		public function _captivate_sync( $request ) {
-
-			$data     = $request->get_params();
-			$sync_key = $data['sync_key'];
-			$show_id  = $data['show_id'];
-            $episode_id = $data['episode_id'];
-
-			if ( $sync_key && $show_id ) {
-
-				$current_shows = cfm_get_show_ids();
-
-				if ( in_array( $show_id, $current_shows ) ) {
-
-					if ( cfm_get_show_info( $show_id, 'sync_key' ) == $sync_key ) {
-
-					    if( $episode_id ) {
-                            $sync_show = cfm_sync_wp_episode( $episode_id );
-                        } else {
-                            $sync_show = cfm_sync_shows( $show_id );
-                        }
-
-						if ( false == $sync_show ) {
-							echo 'ERROR: Something went wrong! Please contact the support team.';
-						} else {
-                            if( $episode_id ) {
-                                echo 'SUCCESS: Episode has successfully synchronised.';
-                            } else {
-                                echo 'SUCCESS: Show has successfully synchronised.';
-                            }
-						}
-					} else {
-
-						echo 'ERROR: Sync key not accepted.';
-
-					}
-				} else {
-					echo 'ERROR: Show does not exist in current CaptivateSync install.';
-				}
-			}
 
 		}
 

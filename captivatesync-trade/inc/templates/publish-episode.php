@@ -45,7 +45,6 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 	$custom_field 	 = get_post_meta( $episode_id, 'cfm_episode_custom_field', true);
 	$itunes_title    = get_post_meta( $episode_id, 'cfm_episode_itunes_title', true );
 	$itunes_subtitle = get_post_meta( $episode_id, 'cfm_episode_itunes_subtitle', true );
-	$itunes_summary  = get_post_meta( $episode_id, 'cfm_episode_itunes_summary', true );
 	$itunes_season   = get_post_meta( $episode_id, 'cfm_episode_itunes_season', true );
 	$itunes_number   = get_post_meta( $episode_id, 'cfm_episode_itunes_number', true );
 	$itunes_type     = get_post_meta( $episode_id, 'cfm_episode_itunes_type', true );
@@ -549,18 +548,6 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 												?>
 											</div>
 
-										</div>
-
-										<div class="cfm-field cfm-itunes-summary-check mt-4">
-											<label class="label-checkbox">
-												<input type="checkbox" class="form-checkbox" id="itunes_summary_check" name="itunes_summary_check" value="" <?php echo ( $is_edit && '' != $itunes_summary ) ? 'checked="checked"' : ''; ?>>
-												Would you like to use an iTunes episode summary? <i class="fal fa-info-circle pl-2 cfmsync-tooltip" aria-hidden="true" title="" data-placement="bottom" data-original-title="Optional summary for use in Apple Podcasts. Sorry, no HTML or links."></i>
-											</label>
-										</div>
-
-										<div class="cfm-field cfm-itunes-summary mt-2 hidden"<?php echo ( $is_edit && '' != $itunes_summary ) ? ' style="display: block;"' : ''; ?>>
-											<label for="itunesSummary">ITUNES EPISODE SUMMARY</label>
-											<textarea rows="4" class="form-control" name="itunesSummary" id="itunesSummary"><?php echo esc_attr( $itunes_summary ); ?></textarea>
 										</div>
 
 										<div class="cfm-field cfm-episode-type mt-4">

@@ -251,11 +251,6 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 						$episode_info['seo_description'] = sanitize_text_field( wp_unslash( $_POST['seoDescription'] ) );
 						update_post_meta( $post_id, 'cfm_episode_seo_description', sanitize_text_field( wp_unslash( $_POST['seoDescription'] ) ) );
 
-						// Episode summary.
-						$itunesSummary = ( isset( $_POST['itunes_summary_check'] ) && isset( $_POST['itunesSummary'] ) ) ? wp_unslash( wp_filter_kses( $_POST['itunesSummary'] ) ) : '';
-						$episode_info['summary'] = $itunesSummary;
-						update_post_meta( $post_id, 'cfm_episode_itunes_summary', $itunesSummary );
-
 						// Audio file.
 						if ( isset( $_POST['media_id'] ) ) {
 							$episode_info['media_id'] = sanitize_text_field( wp_unslash( $_POST['media_id'] ) );

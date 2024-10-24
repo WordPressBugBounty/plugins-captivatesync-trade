@@ -56,7 +56,7 @@ class CFM_Hosting_Shortcode  {
 			$layout_class = $a['layout'] == 'grid' ? 'cfm-episodes-grid' : 'cfm-episodes-list';
 			$column_class = $a['layout'] == 'grid' ? ' cfm-episodes-cols-' . $a['columns'] : '';
 
-			$output .= '<div id="cfm-episodes-' . $i . '" class="' . $layout_class . $column_class . '">';
+			$output .= '<div id="cfm-episodes-' . $i . '" class="' . esc_attr( $layout_class ) . esc_attr( $column_class ) . '">';
 
 				while ( $episodes->have_posts() ) :
 

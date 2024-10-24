@@ -208,7 +208,8 @@ if ( ! class_exists( 'CFMH_Hosting_Sync_Front' ) ) :
 
 					if ( $cfm_episode_media_id ) {
 						$output .= '<div class="cfm-player-iframe" style="width: 100%; height: 200px; margin-bottom: 20px; border-radius: 6px; overflow:hidden;"><iframe style="width: 100%; height: 200px;" frameborder="no" scrolling="no" seamless allow="autoplay" src="' . CFMH_PLAYER_URL . '/episode/' . $cfm_episode_id . '"></iframe></div>';
-					} else {
+					}
+					else {
 						if ( is_user_logged_in() ) {
 							$output .= '<div class="cfm-player-iframe" style="width: 100%; margin-bottom: 20px; border-radius: 6px; overflow:hidden; border: 1px solid #d6d6d6;"><div class="cfm-sorry-text">Sorry, there\'s no audio file uploaded to this episode yet.</div></div>';
 						}
@@ -216,11 +217,13 @@ if ( ! class_exists( 'CFMH_Hosting_Sync_Front' ) ) :
 
 					$output .= $content;
 
-				} else {
+				}
+				else {
 					$output .= $content;
 				}
 				return $output;
-			} else {
+			}
+			else {
 				return $content;
 			}
 
@@ -386,6 +389,8 @@ if ( ! class_exists( 'CFMH_Hosting_Sync_Front' ) ) :
 				$cfm_episode_seo_title   		= get_post_meta( $post_id, 'cfm_episode_seo_title', true );
 				$cfm_episode_seo_description   	= get_post_meta( $post_id, 'cfm_episode_seo_description', true );
 
+				$cfm_episode_media_url = get_post_meta( $post_id, 'cfm_episode_media_url', true );
+
 				// twitter data.
 				echo '	<meta property="twitter:card" content="player" />' . "\n";
 				echo '	<meta property="twitter:player" content="' . CFMH_PLAYER_URL . '/episode/' . esc_attr( $cfm_episode_id ) . '/twitter/">' . "\n";
@@ -404,6 +409,12 @@ if ( ! class_exists( 'CFMH_Hosting_Sync_Front' ) ) :
 				echo '	<meta property="description" content="' . esc_attr($cfm_episode_seo_description ? $cfm_episode_seo_description : $cfm_episode_content . '...' ) . '">' . "\n";
 				echo '	<meta property="og:image" content="' . esc_attr( $og_image ) . '" />' . "\n";
 
+				// og audio.
+				if ( $cfm_episode_media_url ) {
+					echo '	<meta property="og:audio" content="' . esc_attr( cfm_add_media_prefixes ( $cfm_show_id, $cfm_episode_media_url ) ) . '" />' . "\n";
+					echo '	<meta property="og:audio:type" content="audio/mpeg">' . "\n";
+				}
+
 			}
 
 		}
@@ -416,8 +427,18 @@ if ( ! class_exists( 'CFMH_Hosting_Sync_Front' ) ) :
 		 */
 		public static function add_show_feed_rss() {
 			$shows = cfm_get_shows();
-			if ( 1 == count( $shows ) ) {
-				echo '<link rel="alternate" type="application/rss+xml" title="RSS feed for ' . esc_attr( $shows[0]['title'] ) . '" href="' . esc_url( $shows[0]['feed_url'] ) . '" />' . "\n";
+
+			if ( ! empty( $shows ) ) {
+
+				$queried_object = get_queried_object();
+				$queried_object_id = $queried_object ? $queried_object->ID : 'CFM_NULL';
+
+				foreach ( $shows as $show ) {
+					if ( $queried_object_id == $show['index_page'] ) {
+						echo '<link rel="alternate" type="application/rss+xml" title="RSS feed for ' . esc_attr( $show['title'] ) . '" href="' . esc_url( $show['feed_url'] ) . '" />' . "\n";
+					}
+				}
+
 			}
 		}
 
