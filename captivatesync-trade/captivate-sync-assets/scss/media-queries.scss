@@ -1,0 +1,291 @@
+
+@media (min-width: 576px) {
+	#wpbody-content .wrap {
+
+		// Footer
+		.cfm-page-footer {
+			.footer-content {
+				text-align: center;
+				p {
+					margin: 0;
+				}
+				.footer-left {
+					margin-bottom: 0;
+				}
+				.footer-right {
+					a {
+						display: inline-block;
+						margin: 5px 5px;
+					}
+				}
+			}
+		}
+	}
+}
+
+@media (min-width: 768px) {
+	.cfm-data-table tbody {
+		td.cfm-td-title {
+			> span {
+				overflow: hidden;
+				display: -webkit-box;
+				-webkit-box-orient: vertical;
+				-webkit-line-clamp: 2;
+			}
+		}
+	}
+}
+
+@media (min-width: 992px) {
+	#wpbody-content .wrap {
+
+		// Modal
+		.modal-lg, .modal-xl {
+			max-width: 950px;
+		}
+	}
+}
+
+@media (min-width: 1200px) {
+	#wpbody-content .wrap {
+
+		// Footer
+		.cfm-page-footer {
+			.footer-content {
+				padding-top: 10px;
+				padding-bottom: 5px;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				.footer-left {
+					text-align: left;
+					flex: 0 0 200px;
+					p {
+						margin-bottom: 5px;
+					}
+				}
+				.footer-right {
+					text-align: right;
+					flex: 0 0 calc(100% - 200px);
+					a {
+						margin-top: 0;
+					}
+				}
+			}
+		}
+	}
+}
+
+@media (max-width: 1292px) {
+	#wpbody-content .wrap {
+
+		// My Podcasts - List
+		.cfm-shows-list {
+			.datatable-row-group {
+				.datatable-actions {
+					flex-grow: 0;
+    				flex-basis: 100%;
+					justify-content: flex-start;
+					padding-left: 0;
+					> div {
+						margin: 0 10px 0 0;
+					}
+
+					.icon-actions {
+						text-align: left;
+
+						.btn {
+							&:first-child {
+								margin-left: 0;
+							}
+						}
+					}
+				}
+
+			}
+		}
+	}
+}
+
+@media (max-width: 991px) {
+	#wpbody-content .wrap {
+
+		// Page heading
+		.cfm-page-heading {
+			.cfm-page-title {
+				flex: 0 0 calc(100% - 129px);
+				h1 {
+					font-size: 20px;
+				}
+			}
+			.cfm-page-logo {
+				flex: 0 0 40px;
+				position: relative;
+    			overflow: hidden;
+				img {
+					width: 220px;
+					object-position: -10px 0;
+				}
+			}
+
+			&.no-art {
+				.cfm-page-title {
+					flex: 0 0 calc(100% - 40px);
+					h1 {
+						font-size: 22px;
+					}
+				}
+			}
+		}
+
+		// My Podcasts - List
+		.cfm-shows-list {
+			.datatable-row-group {
+				.datatable-body-cell {
+					flex-direction: row;
+					flex-wrap: wrap;
+					> div {
+						display: block;
+						width: 100%;
+						margin: 0 0 10px 0;
+					}
+
+					&.datatable-actions {
+						select {
+							width: 100%;
+						}
+						.icon-actions {
+							display: flex;
+							justify-content: space-between;
+							.btn {
+								margin: 0;
+								font-size: 20px;
+							}
+						}
+
+					}
+				}
+
+			}
+		}
+
+		// Episodes
+		.cfm-data-table {
+			thead {
+				&:not(.cfm-th-num) {
+					display: none;
+				}
+			}
+			tbody {
+				td {
+					&:not(.cfm-td-num):not(.cfm-td-title) {
+						display: none;
+					}
+					&.cfm-td-num {
+						vertical-align: top;
+						width: 60px;
+					}
+					&.cfm-td-title {
+						> span {
+							margin-bottom: 10px;
+							display: block;
+						}
+						p.hidden {
+							display: block;
+
+							> span {
+								display: block;
+								margin-bottom: 10px;
+								font-size: 14px;
+								font-weight: 300;
+								color: #647381;
+								.status {
+									margin-left: 10px;
+								}
+							}
+							.btn {
+								margin: 10px 10px 0 0;
+								font-size: 20px;
+								width: 46px;
+							}
+						}
+					}
+				}
+			}
+
+		}
+
+		// Form fields
+		.cfm-field-heading {
+			font-size: 18px;
+		}
+		.cfm-field {
+			margin-bottom: 20px;
+		}
+
+	}
+}
+
+@media screen and (max-width: 782px) {
+	.cfm-data-table .dataTables_wrapper .dataTables_filter label {
+		display: block;
+	}
+	.cfm-data-table .dataTables_filter input[type="search"] {
+		width: 100%;
+		margin: 15px 0;
+		box-sizing: border-box;
+	}
+	.cfm-data-table table.dataTable tbody td {
+		padding: 15px 0;
+	}
+}
+
+@media (max-width: 767px) {
+	#wpbody-content .wrap {
+		padding: 20px 20px 20px 10px;
+		width: 100%;
+
+		// Page heading
+		.cfm-page-heading {
+			.cfm-page-title {
+				h1 {
+					font-size: 18px;
+				}
+				.podcast-settings {
+					a, span {
+						font-size: 0;
+					}
+					i {
+						font-size: 24px;
+					}
+				}
+			}
+		}
+
+		// Form fields
+		.input-group {
+			.input-group-text {
+				width: 0;
+				padding: 0;
+				margin-right: -1px;
+			}
+		}
+	}
+
+	// Toaster
+	.cfm-toast-container {
+		.cfm-toaster {
+			width: 100%;
+		}
+	}
+}
+
+@media (max-width: 479px) {
+	#wpbody-content .wrap {
+		.manage-podcasts {
+			.btn {
+				width: 100%;
+			}
+		}
+	}
+}

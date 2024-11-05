@@ -1,0 +1,140 @@
+@mixin optional-at-root($sel) {
+    @at-root #{if(not &, $sel, selector-append(&, $sel))} {
+      @content;
+    }
+  }
+
+@mixin placeholder {
+    @include optional-at-root('::-webkit-input-placeholder') {
+        @content;
+    }
+
+    @include optional-at-root(':-moz-placeholder') {
+        @content;
+    }
+
+    @include optional-at-root('::-moz-placeholder') {
+        @content;
+    }
+
+    @include optional-at-root(':-ms-input-placeholder') {
+        @content;
+    }
+}
+
+@mixin button {
+    color: $primary-text-color;
+    font-family: $primary-font;
+    font-size: 14px;
+    font-weight: 300;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    &:hover, &:focus &:active {
+        color: $primary-text-color;
+        box-shadow: none;
+        text-decoration: none;
+    }
+    &:disabled, &.disabled {
+        cursor: default;
+        pointer-events: none;
+    }
+}
+@mixin button-primary {
+    color: #fff;
+    background-color: $primary-color;
+    border-color: $primary-color;
+    box-shadow: none;
+    &:hover, &:focus, &:active {
+        color: #fff;
+        background-color: #a94f92;
+        border-color: #a14a8a;
+        text-decoration: none;
+    }
+    &:focus, &:active {
+        box-shadow: 0 0 0 0.2rem rgba(184, 102, 163, 0.50);
+    }
+}
+@mixin button-secondary {
+    color: #212529;
+    background-color: #d4d9dd;
+    border-color: #d4d9dd;
+    box-shadow: none;
+    &:hover, &:focus, &:active {
+        color: #212529;
+        background-color: #bfc6cc;
+        border-color: #b8c0c6;
+        text-decoration: none;
+    }
+    &:focus, &:active {
+        box-shadow: 0 0 0 0.2rem rgba(185, 190, 194, 0.50);
+    }
+}
+@mixin button-outline-primary {
+    color: $primary-color;
+    background-color: transparent;
+    border-color: $primary-color;
+    &:hover, &:active, &:focus {
+        color: #fff;
+        background-color: $primary-color;
+        border-color: $primary-color;
+        text-decoration: none;
+    }
+    &:focus, &:active {
+        box-shadow: 0 0 0 0.2rem rgba(184, 102, 163, 0.50);
+    }
+}
+@mixin button-outline-secondary {
+    color: #212529;
+    border-color: $secondary-text-color;
+    &:hover, &:active, &:focus {
+        color: #212529;
+        background-color: #eff3fa;
+        border-color: $secondary-text-color;
+        text-decoration: none;
+    }
+    &:focus, &:active {
+        box-shadow: 0 0 0 0.2rem rgba(185, 190, 194, 0.50);
+    }
+}
+@mixin button-outline-dark {
+    color: $secondary-text-color;
+    border-color: $secondary-text-color;
+    &:hover, &:active, &:focus {
+        color: #fff;
+        background-color: $secondary-text-color;
+        border-color: $secondary-text-color;
+        text-decoration: none;
+    }
+    &:focus, &:active {
+        box-shadow: 0 0 0 0.2rem rgba(100, 115, 129, 0.50);
+    }
+}
+
+@mixin button-table {
+    background-color: #eff3fa;
+    color: $primary-link-color;
+    margin: 2px 0 2px 10px;
+    padding: 6px 10px;
+    width: 36px;
+    &:hover {
+        color: $primary-link-color;
+        border-color: $primary-link-color;
+        text-decoration: none;
+    }
+    &.disabled {
+        background-color: #fff;
+        border-color: $secondary-text-color;
+        color: $secondary-text-color;
+    }
+    &.btn-trash {
+    }
+}
+@mixin is-invalid {
+    border-color: $error-text-color;
+    padding-right: 40px;
+    background-image: url("data:image/svg+xml,%3csvg aria-hidden='true' focusable='false' data-prefix='fas' data-icon='exclamation-triangle' role='img' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512' style='width: 18px;'%3e%3cpath fill='%23dc3545' d='M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z'%3e%3c/path%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 20px;
+}

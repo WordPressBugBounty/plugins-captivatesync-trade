@@ -1,9 +1,9 @@
 === Captivate Sync ===
 Contributors: Kieran McKeefery, Mark Asquith, Captivate Audio Ltd
 Tags: podcast, podcasting, podcaster, itunes, captivate, CaptivateFM, powerpress, blubrry, Buzzsprout, Libsyn
-Requires at least: 4.8.0
-Tested up to: 6.6.2
-Stable tag: 2.0.26
+Requires at least: 5.7.0
+Tested up to: 6.5.2
+Stable tag: 3.0.0
 
 Captivate Sync™ is a WordPress plugin maintained and developed by Captivate, part of the Rebel Base Media family. With our background in Podcast Websites, WordPress development and podcast hosting, hundreds of independent podcasters trust Captivate Sync™ and Captivate to power their podcast brands everyday.
 
@@ -26,10 +26,7 @@ Captivate Sync™ helps you to publish and manage your Captivate podcasts direct
 
 = Show and episode-level podcast management =
 * Manage multiple podcasts and podcast episodes without leaving WordPress
-* Get all the functionality of the Captivate dashboard within WordPress
 * Publish, schedule, edit and draft podcast episodes
-* Attach episode transcriptions for greater accessibility
-* Use Captivate’s time-saving Snippets tool to insert pre-written bios or calls-to-action into your show notes
 * Automatically insert the fully responsive Captivate podcast player wherever you need it
 * Use custom page mapping to create bespoke website content that reflects your brand, business or network
 * Choose whether to hide or display custom links and set bespoke calls to action
@@ -103,6 +100,34 @@ To install Captivate Sync™ manually, please follow these steps:
 
 == Changelog ==
 
+= 3.0.0 =
+* Released on 28/10/2024
+* Overall User Interface updated
+* Settings: Allow users to change single episode slug, category archive slug, enable or disable default archive page.
+* Settings: Ability to display artwork in place of the featured image
+* Settings: Ability to display season and episode number with the episode title
+* Shortcode: Ability to select multiple podcasts and specific episodes
+* Shortcode: Added title and read more link color options
+* Shortcode: Added option to hide/show title
+* Shortcode: Added option for featured image size
+* Shortcode: Added option to change HTML tag for episode title
+* Shortcode: Last generated shortcode will now be saved for later use
+* Shortcode: Preview generated shortcode
+* Shortcode: Episode featured image is now linked to the episode
+* Shortcode: Added load more option
+* Permalink redirect will now use the actual episode URL
+* Added support for dynamic show notes
+* Added duplicate episode feature
+* Added ability to deactivate/activate episode
+* Private, exclusive, and early access episodes will not appear on front-end queries and searches
+* Add/Remove Podcasts now lets you set a default author for each podcast
+* Manual sync for each podcast
+* Clear auto-saved data for each podcast
+* Implemented additional measures to prevent creating duplicate episodes, such as using additional unique identifier for each episode
+* Podcasts database table converted to utf8mb4 (upon re-activation of the plugin) to store any Unicode character
+* PHP version 8.0.0 compatibility
+* Bug fixes and enhancements
+
 = 2.0.26 =
 * Released on 14/10/2024
 * Removed iTunes Summary field
@@ -122,7 +147,7 @@ To install Captivate Sync™ manually, please follow these steps:
 * Bug fix: Auto-sync via webhook not working correctly
 
 = 2.0.22 =
-* Released on 01/06/2023
+* Released on 17/11/2022
 * Bug fix: Transcript and episode-art upload issue
 * Bug fix: Episode URLs trailing slash issue
 
@@ -192,7 +217,7 @@ To install Captivate Sync™ manually, please follow these steps:
 * Auto-save bug fix
 
 = 2.0.7 =
-* Released on 22/04/2021
+* Released on 14/04/2021
 * Replace audio bug fix
 
 = 2.0.6 =

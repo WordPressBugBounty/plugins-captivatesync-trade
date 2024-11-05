@@ -32,9 +32,8 @@ jQuery( document ).ready(
 			$( "#cfm-datatable-episodes" ).one(
 				"preInit.dt",
 				function () {
-
-					$( "#cfm-datatable-episodes_filter" ).prepend( '<a href="' + cfmsync.CFMH_ADMINURL + 'admin.php?page=cfm-hosting-publish-episode&show_id=' + cfmsync.CFMH_SHOWID + '" class="btn btn-lg btn-primary float-left">Publish Episode</a>' );
-
+					$( "#cfm-datatable-episodes_filter input" ).addClass('form-control search');
+					$( "#cfm-datatable-episodes_filter" ).append( '<div class="filter-actions"><a href="' + cfmsync.CFMH_ADMINURL + 'admin.php?page=cfm-hosting-publish-episode&show_id=' + cfmsync.CFMH_SHOWID + '" class="btn btn-primary">Publish New Episode <i class="fal fa-podcast ms-lg-2"></i></a></div>' );
 				}
 			);
 
@@ -49,18 +48,22 @@ jQuery( document ).ready(
 					pageLength: 20,
 					order: [[ 2, "desc" ]],
 					columnDefs: [
-					{bSortable: false, targets: [3,4,5]}
+						{bSortable: false, targets: [4]}
 					],
+      				responsive: true,
+					pagingType: 'full_numbers',
 					language: {
 						paginate: {
-							next: '<i class="fas fa-arrow-right"></i>', // or '→'.
-							previous: '<i class="fas fa-arrow-left"></i>' // or '←'.
+							previous: '<i class="fal fa-chevron-left"></i>',
+							next: '<i class="fal fa-chevron-right"></i>',
+							first: '<i class="fal fa-chevron-double-left"></i>',
+							last: '<i class="fal fa-chevron-double-right"></i>'
 						},
-						search: '',
-						searchPlaceholder: 'Search...'
+						search: '<i class="fal fa-search"></i>',
+						searchPlaceholder: 'Search your episodes...'
 					},
 					fnInfoCallback: function( oSettings, iStart, iEnd, iMax, iTotal, sPre ) {
-						return iStart + " to " + iEnd + " of " + iTotal;
+						return "Showing <strong>" + iStart + " to " + iEnd + "</strong> of " + iTotal;
 					},
 					fnDrawCallback: function() {
 						var paginateRow = $( 'div.dataTables_paginate' );

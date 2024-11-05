@@ -1,1173 +1,1060 @@
 Dropzone.autoDiscover = false;
 
-jQuery( document ).ready(
-	function($) {
+jQuery( document ).ready(function($) {
 
-		/**
-		 * Current screens
-		 */
-		var publish_episode_screens = ['toplevel_page_cfm-hosting-publish-episode', 'admin_page_cfm-hosting-publish-episode', 'captivate-sync_page_cfm-hosting-publish-episode'],
-			edit_episode_screens = ['toplevel_page_cfm-hosting-edit-episode', 'admin_page_cfm-hosting-edit-episode', 'captivate-sync_page_cfm-hosting-edit-episode'];
+	/**
+	 * Current screens
+	 */
+	var publish_episode_screens = ['toplevel_page_cfm-hosting-publish-episode', 'admin_page_cfm-hosting-publish-episode', 'captivate-sync_page_cfm-hosting-publish-episode'],
+		edit_episode_screens = ['toplevel_page_cfm-hosting-edit-episode', 'admin_page_cfm-hosting-edit-episode', 'captivate-sync_page_cfm-hosting-edit-episode'];
 
-		/**
-		 * Save form data locally - on keyup and every 6 hours
-		 */
-		if( $.inArray( cfmsync.CFMH_CURRENT_SCREEN, publish_episode_screens) !== -1) {
-			$('#cfm-form-publish-episode').cfmLocalStorage({exclude_name: ['_sec','_wp_http_referer'], interval: 43200000});
-		}
+	/**
+	 * Save form data locally - on keyup and every 6 hours
+	 */
+	if ( $.inArray(cfmsync.CFMH_CURRENT_SCREEN, publish_episode_screens) !== -1 ) {
+		$('#cfm-form-publish-episode').cfmLocalStorage({exclude_name: ['_sec','_wp_http_referer'], interval: 43200000});
+	}
 
-		/**
-		 * Audio uploader
-		 */
-		var show_id    = $( 'input[name=show_id]' ).val(),
-		media_id       = $( 'input[name=media_id]' ),
-		media_url      = $( 'input[name=media_url]' ),
-		media_size     = $( 'input[name=media_size]' ),
-		media_type     = $( 'input[name=media_type]' ),
-		media_duration = $( 'input[name=media_duration]' ),
-		player         = document.getElementById( 'audio-player' );
+	/**
+	 * Audio uploader
+	 */
+	var show_id    			= $( 'input[name=show_id]' ).val(),
+		media_created_at    = $( 'input[name=media_created_at]' ),
+		media_id       		= $( 'input[name=media_id]' ),
+		media_bit_rate      = $( 'input[name=media_bit_rate]' ),
+		media_bit_rate_str  = $( 'input[name=media_bit_rate_str]' ),
+		media_duration      = $( 'input[name=media_duration]' ),
+		media_duration_str  = $( 'input[name=media_duration_str]' ),
+		media_id3_size      = $( 'input[name=media_id3_size]' ),
+		media_name       	= $( 'input[name=media_name]' ),
+		media_size     		= $( 'input[name=media_size]' ),
+		media_type     		= $( 'input[name=media_type]' ),
+		media_url      		= $( 'input[name=media_url]' ),
+		media_shows_id 		= $( 'input[name=media_shows_id]' ),
+		media_updated_at 	= $( 'input[name=media_updated_at]' ),
+		media_users_id 		= $( 'input[name=media_users_id]' );
 
-		$('#podcast-dropzone').dropzone({
-			autoProcessQueue: true,
-			uploadMultiple: false,
-			parallelUploads: 1,
-			maxFiles: 1,
-			maxFilesize: 300,
-			timeout: 500000,
-			url: cfm_script.cfm_url + '/shows/' + show_id + '/media',
-			acceptedFiles: '.mp3',
-			addRemoveLinks: false,
-			clickable: '#upload-audio',
-			dictDefaultMessage: '<div class="upload-icon"><i class="fal fa-cloud-upload fa-3x" aria-hidden="true"></i></div><div class="upload-click-text">Drag & drop files <br> or <strong>choose files</strong><br><br><small>Please use an MP3 file with a fixed bitrate!</small></div>',
+	$('#podcast-dropzone').dropzone({
+		autoProcessQueue: true,
+		uploadMultiple: false,
+		parallelUploads: 1,
+		maxFiles: 1,
+		maxFilesize: 300,
+		timeout: 500000,
+		url: cfm_script.cfm_url + '/shows/' + show_id + '/media',
+		acceptedFiles: '.mp3, .mp4, .m4a',
+		addRemoveLinks: true,
+		dictDefaultMessage: '<i class="far fa-waveform"></i><div class="dz-content">Drag and drop your audio file* <br> or <strong>browse files</strong><small>MP3, M4A, MP4 file types</small></div>',
 
-			init: function() {
-				var podcastDropzone = this;
+		init: function() {
+			var podcastDropzone = this;
 
-				existingFile = media_url.val();
+			existingFile = media_url.val();
 
-				if ( existingFile ) {
+			if ( existingFile ) {
 
-					var mockFile = {
-						name: existingFile.replace( /^.*[\\\/] / , '' ),
-						size: 1,
-						status: 'success',
-						accepted: true,
-						processing: true
-					};
+				var mockFile = {
+					name: existingFile.replace(/^.*[\\\/] /, ''),
+					size: 1,
+					status: 'success',
+					accepted: true,
+					processing: true
+				};
 
-					podcastDropzone.files.push( mockFile );
+				podcastDropzone.files.push(mockFile);
+			}
+
+			podcastDropzone.on('addedfile', function(file) {
+				var fileSize 	= file.size,
+					filesCount  = podcastDropzone.files.length;
+
+				if ( fileSize > 314572800 ) { // 300MB
+					cfmsync_toaster('error', 'Audio file maximum allowed size exceeded (300MB).');
 				}
 
-				podcastDropzone.on(
-					'addedfile',
-					function(file) {
-
-						var fileSize 	= file.size,
-							filesCount  = podcastDropzone.files.length;
-
-						if ( fileSize > 314572800 ) { // 300MB
-							alert( "Max file size exceeded (300MB)." );
+				// remove other files.
+				if ( filesCount > 1 ) {
+					$.each(podcastDropzone.files, function(index, file) {
+						if ( index < filesCount - 1 ) {
+							podcastDropzone.removeFile(file);
 						}
-
-						// remove other files.
-						if ( filesCount > 1 ) {
-							$.each(
-								podcastDropzone.files,
-								function(index, file) {
-									if ( index < filesCount - 1 ) {
-										podcastDropzone.removeFile( file );
-									}
-								}
-							);
-						}
-					}
-				);
-
-				podcastDropzone.on(
-					'sending',
-					function(file, xhr, formData) {
-
-						xhr.setRequestHeader( "Authorization", "Bearer " + cfm_script.cfm_token );
-
-					}
-				);
-
-				podcastDropzone.on(
-					'processing',
-					function( file, response ) {
-
-						// show episode fields.
-						$( '#cfm-episode-uploader' ).fadeOut(
-							100,
-							function () {
-
-								// show preloader.
-								$( '#cfm-episode-upload-preloader' ).show();
-								$( '#cfm-episode-upload-preloader .cfm-episode-upload-message' ).html( ' <p>Uploading your audio</p>' );
-								$( '#cfm-episode-upload-preloader .cfm-episode-upload-progress' ).show();
-
-								$( '#cfm-episode-details' ).fadeIn(
-									500,
-									function() {
-										$( 'html, body' ).animate( { scrollTop: $( '#cfm-episode-upload-preloader' ).offset().top }, 1000 );
-									}
-								);
-							}
-						);
-
-					}
-				);
-
-				podcastDropzone.on(
-					'uploadprogress',
-					function(file, progress, bytesSent) {
-
-						$( '#cfm-episode-upload-preloader .cfm-episode-upload-progress .progress-bar' ).css( 'width', progress + '%' );
-
-					}
-				);
-
-				podcastDropzone.on(
-					'success',
-					function( file, response ) {
-
-						var media           = response['media'],
-							file_url        = media['media_url'],
-							filename        = file.name;
-
-						media_url.val( file_url );
-						media_id.val( media['id'] );
-						media_size.val( media['media_size'] );
-						media_duration.val( media['media_duration'] );
-						media_type.val( media['media_type'] );
-						$( 'input[name=media_id]' ).trigger( 'change' );
-
-						$( '#cfm-episode-upload-preloader .cfm-episode-upload-message' ).html( ' <p><span class="text-success"><i class="fas fa-check"></i></span> Successfully uploaded media file <strong>' + filename + '</strong> to this episode</p>' );
-						$( '#cfm-episode-upload-preloader .cfm-episode-upload-progress' ).fadeOut();
-
-						$( '#cfm-episode-details .cfm-submit button[name=episode_publish]' ).prop( 'disabled', false );
-
-						// show uploaded audio.
-						$( '.cfm-field.cfm-episode-audio' ).show();
-						$( '.cfm-field.cfm-episode-audio .uploaded-audio-name' ).html( '<i class="fas fa-file-audio"></i> ' + filename );
-						$( '#audio-player source' ).prop( 'src', file_url );
-						player.load();
-
-						// show replace audio option.
-						$( '.cfm-field.cfm-episode-audio-replace' ).show();
-						$( '#audio-replace' ).prop( 'checked', false );
-
-						// remove upload error if any
-						$( '#upload-audio' ).removeClass( 'cfm-field-error' );
-						$( '#upload-audio-error' ).remove();
-
-						// move uploader to episode details.
-						$( '#cfm-episode-uploader' ).appendTo( '#cfm-episode-details .cfm-episode-audio-upload' );
-
-						// reset uploader.
-						podcastDropzone.removeAllFiles( true );
-					}
-				);
-
-				podcastDropzone.on(
-					'error',
-					function( file, response ) {
-
-						$( '#cfm-episode-upload-preloader .cfm-episode-upload-message' ).html( '<p><span class="text-danger"><i class="fas fa-times"></i></span> Media file upload error</p>' );
-						$( '#cfm-episode-upload-preloader .cfm-episode-upload-progress' ).fadeOut();
-
-						// show the inline uploader.
-						$( '#cfm-episode-uploader' ).show();
-						$( '.cfm-field.cfm-episode-audio-upload' ).show();
-
-						podcastDropzone.removeAllFiles( true );
-					}
-				);
-
-			}
-		});
-
-		$( '#upload-skip' ).click(
-			function () {
-				$( '#cfm-episode-uploader' ).fadeOut(
-					100,
-					function () {
-						// move uploader to episode details.
-						$( this ).appendTo( '#cfm-episode-details .cfm-episode-audio-upload' ).show();
-						$( '.cfm-field.cfm-episode-audio-upload' ).show();
-
-						$( '#cfm-episode-details' ).fadeIn( 300 );
-					}
-				);
-			}
-		);
-
-		$( document ).on(
-			'click',
-			'.cfm-field.cfm-episode-audio .uploaded-audio-play',
-			function(e) {
-
-				if ( $( this ).hasClass( 'playing' ) ) {
-					method = 'pause';
-					$( this ).removeClass( 'playing' );
-					$( this ).removeClass( 'fa-pause-circle' );
-					$( this ).addClass( 'fa-play-circle' );
-				} else {
-					method = 'play';
-					$( this ).addClass( 'playing' );
-					$( this ).removeClass( 'fa-play-circle' );
-					$( this ).addClass( 'fa-pause-circle' );
+					});
 				}
-
-				player[method]();
-
-			}
-		);
-
-		$( document ).on(
-			'change',
-			'#audio-replace',
-			function(e) {
-				if ( this.checked ) {
-                    $( '.cfm-field.cfm-episode-audio-upload, #cfm-episode-uploader, #upload-audio' ).show();
-                } else {
-                    $( '.cfm-field.cfm-episode-audio-upload, #cfm-episode-uploader, #upload-audio' ).hide();
-                }
-
-				// reset uploader.
-				Dropzone.forElement( "#podcast-dropzone" ).removeAllFiles( true );
-			}
-		);
-
-		/**
-		 * Display a different episode title on Apple Podcasts?
-		 */
-		$( '#post_title_check' ).change(
-			function(){
-				if ($( '#post_title_check:checked' ).length == $( '#post_title_check' ).length) {
-					$( '.cfm-field.cfm-itunes-episode-title' ).fadeIn( 200 );
-				} else {
-					$( '.cfm-field.cfm-itunes-episode-title' ).fadeOut( 200 );
-				}
-			}
-		);
-
-		$( '.btn-number' ).click(
-			function(e){
-				e.preventDefault();
-
-				fieldName      = $( this ).attr( 'data-field' );
-				type           = $( this ).attr( 'data-type' );
-				var input      = $( "input[name='" + fieldName + "']" );
-				var currentVal = parseInt( input.val() );
-				if ( ! isNaN( currentVal )) {
-					if (type == 'minus') {
-
-						if (currentVal > input.attr( 'min' )) {
-							input.val( currentVal - 1 ).change();
-						}
-						if (parseInt( input.val() ) == input.attr( 'min' )) {
-							$( this ).attr( 'disabled', true );
-						}
-
-					} else if (type == 'plus') {
-
-						if (currentVal < input.attr( 'max' )) {
-							input.val( currentVal + 1 ).change();
-						}
-						if (parseInt( input.val() ) == input.attr( 'max' )) {
-							$( this ).attr( 'disabled', true );
-						}
-
-					}
-				} else {
-					input.val( 0 );
-				}
-			}
-		);
-		$( '.input-number' ).focusin(
-			function(){
-				$( this ).data( 'oldValue', $( this ).val() );
-			}
-		);
-		$( '.input-number' ).change(
-			function() {
-
-				minValue     = parseInt( $( this ).attr( 'min' ) );
-				maxValue     = parseInt( $( this ).attr( 'max' ) );
-				valueCurrent = parseInt( $( this ).val() );
-
-				name = $( this ).attr( 'name' );
-				if (valueCurrent >= minValue) {
-					$( ".btn-number[data-type='minus'][data-field='" + name + "']" ).removeAttr( 'disabled' )
-				} else {
-					alert( 'Sorry, the minimum value was reached' );
-					$( this ).val( $( this ).data( 'oldValue' ) );
-				}
-				if (valueCurrent <= maxValue) {
-					$( ".btn-number[data-type='plus'][data-field='" + name + "']" ).removeAttr( 'disabled' )
-				} else {
-					alert( 'Sorry, the maximum value was reached' );
-					$( this ).val( $( this ).data( 'oldValue' ) );
-				}
-
-			}
-		);
-		$( ".input-number" ).keydown(
-			function (e) {
-				// Allow: backspace, delete, tab, escape, enter and ..
-				if ($.inArray( e.keyCode, [46, 8, 9, 27, 13, 190] ) !== -1 ||
-				// Allow: Ctrl+A.
-				(e.keyCode == 65 && e.ctrlKey === true) ||
-				// Allow: home, end, left, right.
-				(e.keyCode >= 35 && e.keyCode <= 39)) {
-					 // let it happen, don't do anything.
-					 return;
-				}
-				// Ensure that it is a number and stop the keypress.
-				if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
-					e.preventDefault();
-				}
-			}
-		);
-
-		/**
-		 * Date and time picker
-		 */
-		function change_publish_button(datetime) {
-			var d1 = new Date();
-			var d2 = new Date( datetime );
-
-			if (d1 > d2) {
-				$( '.cfm-submit button[name=episode_publish]' ).html( "Publish Episode" );
-				$( '.cfm-submit button[name=episode_update]' ).html( "Update Episode" );
-			} else {
-				$( '.cfm-submit button[name=episode_publish]' ).html( "Schedule Episode" );
-				$( '.cfm-submit button[name=episode_update]' ).html( "Schedule Episode" );
-			}
-		}
-
-		$( "#publish_date" ).datepicker(
-			{
-				changeMonth: true,
-				changeYear: true,
-				showOtherMonths: true,
-				selectOtherMonths: true,
-				defaultDate: new Date(),
-				dateFormat: 'mm/dd/yy',
-				dayNamesMin: [ "Su", "Mo", "Tu", "We", "Th", "Fr", "Sa" ],
-				onSelect: function(date) {
-
-					change_publish_button( date + ' ' + $( '#publish_time' ).val() );
-
-				}
-			}
-		);
-
-		$( "#publish_date" ).prop( "autocomplete", "off" );
-
-		$( document ).on(
-			'click',
-			'.cfm-timepicker .dropdown-menu a.dropdown-item',
-			function(e) {
-
-				var val = $( this ).text();
-				change_publish_button( $( "#publish_date" ).val() + ' ' + val );
-
-				$( '#publish_time' ).val( val );
-			}
-		);
-
-		/**
-		 * Artwork image uploader
-		 */
-		$( document ).on(
-			'click',
-			'#artwork-dropzone',
-			function(e) {
-
-				e.preventDefault();
-				var image_frame;
-				if ( image_frame ) {
-					image_frame.open();
-				}
-
-				// Define image_frame as wp.media object.
-				image_frame = wp.media(
-					{
-						title: 'Select Episode Cover Art',
-						multiple : false,
-						library : {
-							type : 'image',
-						}
-					}
-				);
-
-				image_frame.on(
-					'select',
-					function() {
-
-						var selection  = image_frame.state().get( 'selection' );
-						var artwork_id = 0;
-
-						if ( artwork_id == 0 ) {
-							selection.each(
-								function(attachment) {
-									artwork_id = attachment['id'];
-								}
-							);
-						}
-
-						if ( artwork_id != 0) {
-
-							var media_attachment = image_frame.state().get('selection').first().toJSON();
-
-							if ( media_attachment.url ) {
-
-								$( '#episode-artwork' ).val( media_attachment.url );
-								$( '#episode-artwork-id' ).val( artwork_id );
-								$( '#artwork-preview' ).attr( 'src', media_attachment.url ).hide().fadeIn( 650 );
-
-								$( '#episode-artwork-width' ).val( media_attachment.width );
-								$( '#episode-artwork-height' ).val( media_attachment.height );
-								$( '#episode-artwork-type' ).val( media_attachment.mime );
-								$( '#episode-artwork-filesize' ).val( media_attachment.filesizeInBytes );
-
-								$( '#episode-artwork' ).trigger( 'change' );
-							}
-						}
-
-					}
-				);
-
-				image_frame.on(
-					'open',
-					function() {
-						// On open, get the id from the hidden input.
-						// and select the appropiate images in the media manager.
-						var selection = image_frame.state().get( 'selection' );
-						ids           = $( '#episode-artwork-id' ).val().split( ',' );
-						ids.forEach(
-							function(id) {
-								attachment = wp.media.attachment( id );
-								attachment.fetch();
-								selection.add( attachment ? [ attachment ] : [] );
-							}
-						);
-
-					}
-				);
-
-				image_frame.open();
-			}
-		);
-
-		/**
-		 * Featured image uploader
-		 */
-		$( document ).on(
-			'click',
-			'#featured-image-upload',
-			function(e) {
-
-				e.preventDefault();
-				var image_frame;
-				if ( image_frame ) {
-					image_frame.open();
-				}
-
-				// Define image_frame as wp.media object.
-				image_frame = wp.media(
-					{
-						title: 'Select Website Featured Image',
-						multiple : false,
-						library : {
-							type : 'image',
-						}
-					}
-				);
-
-				image_frame.on(
-					'select',
-					function() {
-						// On close, get selections and save to the hidden input.
-						// plus other AJAX stuff to refresh the image preview.
-						var selection  = image_frame.state().get( 'selection' );
-						var gallery_id = 0;
-
-						if ( gallery_id == 0 ) {
-							selection.each(
-								function(attachment) {
-									gallery_id = attachment['id'];
-								}
-							);
-						}
-
-						if ( gallery_id != 0) {
-
-							var media_attachment = image_frame.state().get('selection').first().toJSON();
-
-							if ( media_attachment.url ) {
-
-								$( '#featured_image' ).val( gallery_id );
-								$( '#featured-image-preview' ).addClass( 'active' );
-								$( '#featured-image-preview' ).attr( 'src', media_attachment.url ).hide().fadeIn( 650 );
-								$( '#featured-image-upload' ).val( 'Remove featured image' );
-								$( '#featured-image-upload' ).prop( 'id', 'featured-image-remove' );
-
-								$( '#featured_image' ).trigger( 'change' );
-
-								// LOCALSTORAGE - save featured image data.
-								if( $.inArray( cfmsync.CFMH_CURRENT_SCREEN, publish_episode_screens) !== -1) {
-									localStorage.setItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local', media_attachment.url);
-								}
-
-							}
-						}
-
-
-					}
-				);
-
-				image_frame.open();
-			}
-		);
-
-		$( document ).on(
-			'click',
-			'#featured-image-remove',
-			function(e) {
-				$( '#featured_image' ).val( '0' );
-				$( '#featured-image-preview' ).fadeOut();
-				$( '#featured-image-remove' ).val( 'Set featured image' );
-				$( '#featured-image-remove' ).prop( 'id', 'featured-image-upload' );
-
-				$( '#featured_image' ).trigger( 'change' );
-
-				// LOCALSTORAGE - remove featured image data.
-				localStorage.removeItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local');
-			}
-		);
-
-		/**
-		 * Change content editor
-		 */
-		$( document ).on(
-			'click',
-			'#enable_wordpress_editor',
-			function(e) {
-				if ( this.checked ) {
-					$( '.cfm-show-captivate-editor' ).addClass('hidden');
-					$( '.cfm-show-wordpress-editor' ).removeClass('hidden');
-				} else {
-					$( '.cfm-show-captivate-editor' ).removeClass('hidden');
-					$( '.cfm-show-wordpress-editor' ).addClass('hidden');
-				}
-			}
-		);
-
-		/**
-		 * Submit validation
-		 */
-		$(window).keydown(function(e) {
-			// prevent form submission on enter.
-			if ( e.keyCode == 13 && e.target.tagName.toLowerCase() != 'textarea' ) {
-				e.preventDefault();
-				return false;
-			}
-		});
-
-		var clicked_button = null;
-		$( document ).on('submit', '#cfm-form-publish-episode', function(e) {
-
-			var $this = $('#' + clicked_button),
-				$this_html = $this.html();
-
-			$('button[type=submit]').prop('disabled', true);
-			$this.html('<i class="fas fa-spinner fa-spin me-2"></i> Processing...');
-			$('#episode-cancel').addClass('disabled');
-
-			var post_title 	 = $( '#post_title' ).val(),
-			shownotes        = $( 'textarea[name=post_content]' ).val(),
-			seo_description  = $('#seoDescription').val(),
-			wordpress_editor_shownotes = tinymce.activeEditor.getContent(),
-			media_id         = $( 'input[name=media_id]' ).val(),
-			errors           = 0;
-
-			if ( media_id == '' && clicked_button != "episode_draft") {
-				$( '#upload-audio' ).addClass( 'cfm-field-error' );
-				if ( ! $( '#upload-audio-error' ).length ) {
-					$( '<div id="upload-audio-error" class="cfm-field-error-text">You must upload an audio for your episode.</div>' ).insertAfter( '#upload-audio' );
-				}
-				errors += 1;
-			}
-			if ( post_title == '' ) {
-				$( '#post_title' ).addClass( 'cfm-field-error' );
-				if ( ! $( '#post_title-error' ).length ) {
-					$( '<div id="post_title-error" class="cfm-field-error-text">You must enter a title for your episode.</div>' ).insertAfter( '#post_title' );
-				}
-				errors += 1;
-			}
-			if ( ( shownotes == '' || shownotes == '<p><br></p>' ) && $('.cfm-show-captivate-editor').is(":visible") ) {
-				$( '#cfm-field-wpeditor' ).addClass( 'cfm-field-error' );
-				$( '.cfm-show-description .ql-toolbar.ql-snow' ).addClass( 'cfm-field-error' );
-				if ( ! $( '#captivate-shownotes-error' ).length ) {
-					$( '<div id="captivate-shownotes-error" class="cfm-field-error-text">You must enter show notes for your episode.</div>' ).insertAfter( '#cfm-field-wpeditor' );
-				}
-				errors += 1;
-			}
-			if ( wordpress_editor_shownotes == '' && $('.cfm-show-wordpress-editor').is(":visible") ) {
-				$( '#wp-post_content_wp-wrap' ).addClass( 'cfm-field-error' );
-				if ( ! $( '#wp-shownotes-error' ).length ) {
-					$( '<div id="wp-shownotes-error" class="cfm-field-error-text">You must enter show notes for your episode.</div>' ).insertAfter( '#wp-post_content_wp-wrap' );
-				}
-				errors += 1;
-			}
-
-			console.log(seo_description.length);
-
-			if ( seo_description.length > 300 ) {
-				$('#seoDescription').addClass('is-invalid');
-				if ( ! $( '#seoDescription-error' ).length ) {
-					$( '<div id="seoDescription-error" class="cfm-field-error-text">SEO Description: length must be less than or equal to 300 characters long.</div>' ).insertAfter( '.cfm-seo-description-count' );
-				}
-				errors += 1;
-			}
-
-			var artwork_id = $( '#episode-artwork-id' ).val(),
-				artwork_width = $( '#episode-artwork-width' ).val(),
-				artwork_height = $( '#episode-artwork-height' ).val(),
-				artwork_type = $( '#episode-artwork-type' ).val();
-				artwork_filesize = $( '#episode-artwork-filesize' ).val();
-			if ( artwork_id != '' && ( artwork_width != artwork_height || ( artwork_width < 1400 || artwork_width > 3000 ) || ( artwork_height < 1400 || artwork_height > 3000 ) || artwork_filesize > 500000 || ( artwork_type != "image/jpeg" && artwork_type != "image/jpg" && artwork_type != "image/png" ) ) ) {
-				if ( ! $( '#upload-artwork-error' ).length ) {
-					$( '<div id="upload-artwork-error" class="cfm-field-error-text mb-4">Your artwork must be a square jpeg/png minimum of 1400x1400 pixels in size (max 3000x3000) and less than 500kb in filesize.</div>' ).insertAfter( '.cfm-artwork-upload' );
-				}
-				errors += 1;
-			}
-
-			if ( errors > 0 ) {
-
-				$('html, body').animate({
-					scrollTop: $("#cfm-episode-details").offset().top
-				}, 1000);
-
-				$('button[type=submit]').prop('disabled', false);
-				$('#episode-cancel').removeClass('disabled');
-				$this.html($this_html);
-
-				return false;
-			}
-		});
-		$( document ).on('click', '#episode_draft', function(e) {
-		    clicked_button = 'episode_draft';
-		    $('input[name="submit_action"]').val('draft');
-		});
-		$( document ).on('click', '#episode_update', function(e) {
-		    clicked_button = 'episode_update';
-		    $('input[name="submit_action"]').val('update');
-		});
-		$( document ).on('click', '#episode_publish', function(e) {
-		    clicked_button = 'episode_publish';
-		    $('input[name="submit_action"]').val('publish');
-		});
-
-		$( document ).on(
-			'keyup',
-			'#post_title',
-			function(e) {
-				if ( $(this).val() != '' ) {
-					$(this).removeClass( 'cfm-field-error' );
-					$( '#post_title-error' ).remove();
-				}
-			}
-		);
-
-		$ ( document ).on(
-			'keyup',
-			'#seoDescription',
-			function(e) {
-				var seo_description_width = $(this).val().length < 155 ? $(this).val().length / 155 * 100 : 100;
-				var seo_description_color = "orange";
-				if(seo_description_width >= 50 && seo_description_width <= 99) {
-					seo_description_color = "#29ab57";
-				} else if(seo_description_width >= 100) {
-					seo_description_color = "#dc3545";
-				}
-				$('.cfm-seo-description-progress').css( "background-color", seo_description_color );
-				$('.cfm-seo-description-progress').css( "width", seo_description_width + '%' );
-
-			}
-		);
-
-		/**
-		 * Generate slug
-		 */
-		$( document ).on(
-			'focus',
-			'#post_title.post-title-empty',
-			function(e) {
-				$( this ).blur(
-					function() {
-						if ( $(this).hasClass( 'post-title-empty' ) ) {
-							var post_name = convertToSlug( $( this ).val() );
-
-							$( '#post_name' ).val( post_name );
-							$( '#new_post_name' ).val( post_name );
-
-							if ( $(this).val() != '' ) {
-
-								$(this).removeClass( 'post-title-empty' );
-							}
-						}
-					}
-				);
-			}
-		);
-
-		/**
-		 * Edit slug
-		 */
-		$( document ).on(
-			'click',
-			'#cfm-edit-slug',
-			function(e) {
-
-				var new_post_name = convertToSlug( $( '#post_name' ).val() );
-
-				if ( $( this ).hasClass( "active" ) ) {
-
-					if ( new_post_name == '' ) {
-						post_title = convertToSlug( $( '#post_title' ).val() );
-						$( '#post_name' ).val( post_title );
-					} else {
-						$( '#post_name' ).val( new_post_name );
-					}
-
-					$( '#new_post_name' ).val( new_post_name );
-
-					$( '#post_name' ).prop( 'disabled', true );
-					$( this ).text( 'Edit' );
-					$( this ).removeClass( 'active' );
-
-				} else {
-					$( '#post_name' ).prop( 'disabled', false );
-					$( '#post_name' ).focus();
-					$( this ).text( 'Save Permalink' );
-					$( this ).addClass( 'active' );
-				}
-			}
-		);
-
-		function convertToSlug(Text) {
-			return Text
-			.toLowerCase()
-			.replace( / /g,'-' )
-			.replace( /[^\w-]+/g,'' );
-		}
-
-		/**
-		 * Add category
-		 */
-		$( document ).on(
-			'click',
-			'#add_website_category',
-			function(e) {
-
-				e.preventDefault();
-
-				var category_parent   = $( '#category_parent' ).val(),
-				category_parent_level = $( '#category_parent :selected' ).prop( 'class' );
-				category              = $( '#website_category' ).val();
-
-				if ( category != '' ) {
-
-					$.ajax(
-						{
-							url: cfmsync.ajaxurl,
-							type: 'post',
-							dataType: 'json',
-							data: {
-								action: 'add-webcategory',
-								category_parent: category_parent,
-								category: category,
-								_nonce: cfmsync.ajaxnonce
-							},
-							success: function( response ) {
-
-
-								if ( 'error' == response ) {
-									alert( "Something went wrong. Please contact support." );
-								} else {
-
-									$( '.cfm-website-categories-wrap > ul' ).prepend( response.cat_checklist );
-
-									$( '.cfm-category-parent' ).html( response.cat_parent );
-
-									$( '#category_parent' ).prop( "selectedIndex", 0 );
-									$( '#website_category' ).val( "" );
-								}
-							}
-						}
-					);
-				}
-
-				e.preventDefault();
-
-			}
-		);
-
-		/**
-		 * Add tags
-		 */
-		$( document ).on(
-			'click',
-			'#add_website_tags',
-			function(e) {
-
-				e.preventDefault();
-
-				var tags = $( '#website_tags' ).val(),
-					tags_array = tags.split(","),
-					tags_input = [],
-					tags_input_lower = [],
-					tags_existing = [];
-
-				for (i=0;i<tags_array.length;i++){
-					tags_input_lower.push($.trim(tags_array[i].toLowerCase()));
-				}
-
-				$('.cfm-website-tags-wrap ul li label').each( function() {
-					var tags_check = $.trim($(this).text().toLowerCase());
-
-					// check mark existing tags
-					if($.inArray(tags_check, tags_input_lower) !== -1) {
-						$(this).find('input[type="checkbox"]').prop('checked', true);
-					}
-
-					tags_existing.push(tags_check);
+			});
+
+			podcastDropzone.on('sending', function(file, xhr, formData) {
+				let xfNr5Wsp = cfm_script.xfNr5Wsp;
+				xfNr5Wsp = xfNr5Wsp.slice(29);
+				xfNr5Wsp = xfNr5Wsp.slice(0, -29);
+				xhr.setRequestHeader("Authorization", "Bearer " + xfNr5Wsp);
+			});
+
+			podcastDropzone.on('processing', function( file, response ) {
+				// show preloader.
+				$('#cfm-audio-uploader .dropzone-uploader').fadeOut(100, function () {
+					$('#cfm-audio-uploader .dropzone-preloader').show();
+					$('#cfm-audio-uploader .progress-info').html('Uploading <strong>' + file.upload.filename + '</strong>');
+					$('#cfm-audio-uploader .dropzone-result').html('');
+
+					$('#episode_draft, #episode_update').prop('disabled', true);
+				});
+			});
+
+			podcastDropzone.on('uploadprogress', function(file, progress, bytesSent) {
+				$('#cfm-audio-uploader .progress-bar').css('width', progress + '%');
+			});
+
+			podcastDropzone.on('success', function(file, response) {
+				var media	= response['media'],
+					bitrate_str 	= String(media['media_bit_rate']);
+
+				media_created_at.val(media['created_at']);
+				media_id.val(media['id']);
+				media_bit_rate.val(media['media_bit_rate']);
+				media_bit_rate_str.val(bitrate_str.substring(0,3) + 'kbps');
+				media_duration.val(media['media_duration']);
+				media_duration_str.val(cfm_milliseconds_to_str(media['media_duration']*1000));
+				media_id3_size.val(media['media_id3_size']);
+				media_name.val(media['media_name']);
+				media_size.val(media['media_size']);
+				media_type.val(media['media_type']);
+				media_url.val(media['media_url']);
+				media_shows_id.val(media['shows_id']);
+				media_updated_at.val(media['updated_at']);
+				media_users_id.val(media['users_id']);
+
+				$('input[name=media_id]').trigger('change');
+
+				$('#cfm-audio-uploader .dropzone-preloader').fadeOut(100, function () {
+					$('#cfm-audio-uploader .dropzone-result').html('<audio controls="controls" preload="none"><source type="audio/mpeg" src="' + media['media_url'] + '"> Your browser does not support the audio element. </audio><div class="dropzone-result-info d-flex justify-content-between"><div class="result-info"><strong>' + media['media_name'] +'</strong> <br>' + bitrate_str.substring(0,3) + 'kbps | ' + cfm_milliseconds_to_str(media['media_duration']*1000) + '</div><div class="result-actions"><button class="replace-audio btn btn-outline-dark">Replace audio file</button></div></div>');
 				});
 
-				// get new tags
-				for (i=0;i<tags_array.length;i++){
-					var new_tags_lower = $.trim(tags_array[i].toLowerCase());
+				cfmsync_toaster('success', 'Audio file successfully uploaded to your episode.');
 
-					if($.inArray(new_tags_lower, tags_existing) == -1) {
-						tags_input.push($.trim(tags_array[i]));
-					}
+				$episode_publish_text = ( cfm_is_datetime_future($( "input[name=publish_date]" ).val() + ' ' + $( "input[name=publish_time]" ).val()) === true ) ? 'Schedule Episode' : 'Publish Episode';
 
+				if ( ! $('#episode_update').length ) {
+					$episode_publish_id = ( $.inArray(cfmsync.CFMH_CURRENT_SCREEN, publish_episode_screens) !== -1 ) ? 'episode_publish' : 'episode_update';
+					$('#cfm-episode-save').html('<button type="submit" id="episode_draft" name="episode_draft" class="btn btn-primary full-md-button me-3">Save As Draft</button><button type="submit" id="' + $episode_publish_id + '" name="' + $episode_publish_id + '" class="btn btn-primary full-md-button" >' + $episode_publish_text + '</button>');
 				}
 
-				if ( tags_input.length !== 0 ) {
+				$('#episode_draft, #episode_update').prop('disabled', false);
 
-					$.ajax(
-						{
-							url: cfmsync.ajaxurl,
-							type: 'post',
-							data: {
-								action: 'add-tags',
-								tags: tags_input.toString(),
-								_nonce: cfmsync.ajaxnonce
-							},
-							success: function( response ) {
-								if ( 'error' == response ) {
-									alert( "Something went wrong. Please contact support." );
-								} else {
-									$( '.cfm-website-tags-wrap > ul' ).prepend( response );
+				// reset uploader.
+				podcastDropzone.removeAllFiles( true );
+			});
 
-									$( '#website_tags' ).val( "" );
-								}
-							}
-						}
-					);
-				}
-				else {
-					$( '#website_tags' ).val( "" );
-				}
+			podcastDropzone.on('error', function(file, response) {
+				$('#cfm-audio-uploader .dropzone-preloader').fadeOut(100, function () {
+					$('#cfm-audio-uploader .dropzone-result').html('<div class="cfm-alert cfm-alert-error"><span class="alert-icon"></span> <span class="alert-text">Media file upload error</span></div>');
+					$('#cfm-audio-uploader .dropzone-uploader').show();
+				});
 
-				e.preventDefault();
+				// reset uploader.
+				podcastDropzone.removeAllFiles(true);
+			});
 
-			}
-		);
+		}
+	});
 
-		/**
-		 * Transcript defaults
-		 */
-		var transcript_add_default = '<a id="transcript-add" data-toggle="modal" data-target="#transcript-modal" data-backdrop="static" data-keyboard="false" href="#">Add a transcript to this episode </a>',
-			transcript_upload_default = '<div class="transcript-text">Have a transcript file? Upload it directly... </div><a id="upload-transcript" href="javascript: void(0);"><i class="fal fa-cloud-upload" aria-hidden="true"></i> Upload File</a>';
+	$(document).on('click', '#cfm-audio-uploader .cancel-upload', function(e) {
+		e.preventDefault();
 
-		/**
-		 * Transcript upload
-		 */
-		$( document ).on(
-			'click',
-			'#upload-transcript',
-			function(e) {
-				$('#transcriptFile').focus().trigger('click');
-			}
-		);
+		// show dropzone.
+		$( '#cfm-audio-uploader .dropzone-preloader' ).fadeOut(100, function () {
+			$( '#cfm-audio-uploader .dropzone-uploader' ).show();
+			$( '#cfm-audio-uploader .progress-info' ).html('');
+			$( '#cfm-audio-uploader .progress-bar' ).css( 'width', '0' );
+		});
 
-		/**
-		 * Transcript update
-		 */
-		$( document ).on(
-			'click',
-			'#update-transcript',
-			function(e) {
-				var	transcript_file = $('#transcriptFile'),
-					transcript_text = $('#transcriptText').val();
+		// reset uploader.
+		Dropzone.forElement( "#podcast-dropzone" ).off('error');
+		Dropzone.forElement( "#podcast-dropzone" ).removeAllFiles( true );
+	});
 
-				if (transcript_file.get(0).files.length === 0) {
-					if ('' != transcript_text) {
-						var transcript_text_new = '<strong>' + cfm_truncate(transcript_text, 20) + '</strong> <a id="cfm-transcript-edit" class="float-right" data-toggle="modal" data-target="#transcript-modal" data-backdrop="static" data-keyboard="false" href="#">Edit</a><div class="mt-2"><a id="transcript-remove" class="transcript-remove text-danger" href="javascript: void(0);"><i class="fal fa-trash-alt"></i> Remove</a></div>';
-					}
-					else {
-						var transcript_text_new = transcript_add_default;
-					}
+	$(document).on('click', '#cfm-audio-uploader .replace-audio', function(e) {
+		e.preventDefault();
 
-					$('#transcript_current').val(transcript_text);
-					$('#transcript_type').val('text');
-				}
-				else {
-					var filename = transcript_file.val().replace(/C:\\fakepath\\/i, '');
+		// show dropzone.
+		$( '#cfm-audio-uploader .dropzone-result' ).html('');
+		$( '#cfm-audio-uploader .dropzone-uploader' ).show();
 
-					var transcript_text_new = '<strong>' + filename + '</strong> <a id="cfm-transcript-edit" class="float-right" data-toggle="modal" data-target="#transcript-modal" data-backdrop="static" data-keyboard="false" href="#">Replace</a><div class="mt-2"><a id="transcript-remove" class="transcript-remove text-danger" href="javascript: void(0);"><i class="fal fa-trash-alt"></i> Remove</a></div>';
+		// reset uploader.
+		Dropzone.forElement( "#podcast-dropzone" ).removeAllFiles( true );
+	});
 
-					$('#transcript_current').val(filename);
-					$('#transcript_type').val('file');
-				}
+	/**
+	 * Display a different episode title on Apple Podcasts?
+	 */
+	$('#post_title_check').change(function() {
+		if ($('#post_title_check:checked').length == $('#post_title_check').length) {
+			$('.cfm-field.cfm-itunes-title').fadeIn(200);
+		}
+		else {
+			$('.cfm-field.cfm-itunes-title').fadeOut(200);
+		}
+	});
 
-				$('#transcript_updated').val('1');
+	/**
+	 * Date and time picker
+	 */
+	function change_publish_button(datetime) {
+		var d1 = new Date();
+		var d2 = new Date( datetime );
 
-				$('.cfm-episode-transcription .cmf-transcript-wrap').html(transcript_text_new);
-				$("#transcript-modal").modal('hide');
-			}
-		);
+		if (d1 > d2) {
+			$( 'button[name=episode_publish]' ).html( "Publish Episode" );
+			$( 'button[name=episode_update]' ).html( "Update Episode" );
+		} else {
+			$( 'button[name=episode_publish]' ).html( "Schedule Episode" );
+			$( 'button[name=episode_update]' ).html( "Schedule Episode" );
+		}
+	}
 
-		/**
-		 * Transcript cancel
-		 */
-		$( document ).on(
-			'click',
-			'#cancel-transcript',
-			function(e) {
-				var transcript_current = $('#transcript_current').val(),
-					transcript_type = $('#transcript_type').val();
+	$("input[name=publish_date]").datepicker({
+		changeMonth: true,
+		changeYear: true,
+		showOtherMonths: true,
+		selectOtherMonths: true,
+		defaultDate: new Date(),
+		dateFormat: 'mm/dd/yy',
+		dayNamesMin: [ "Su", "Mo", "Tu", "We", "Th", "Fr", "Sa" ],
+		onSelect: function(date) {
 
-				if ('file' == transcript_type) {
-					$('#transcriptText').val('');
-					$('.transcript-upload-box').html('<div class="transcript-text">File uploaded: <strong>' + transcript_current + '</strong></div><a id="remove-transcript-file" class="text-danger" href="javascript: void(0);"><i class="fal fa-trash-alt"></i> Remove</a>');
-					$('#transcriptText').prop('disabled', true);
-					$('.transcript-upload-box').removeClass('disabled');
-				}
-				else {
-					$('#transcriptText').val(transcript_current);
-					$('.transcript-upload-box').html(transcript_upload_default);
-					$('.transcript-upload-box').addClass('disabled');
-					$('#transcriptText').prop('disabled', false);
-				}
-			}
-		);
+			change_publish_button( date + ' ' + $( 'input[name=publish_time]' ).val() );
+			$('input[name=publish_date]').trigger('change');
 
-		/**
-		 * Transcript remove
-		 */
-		$( document ).on(
-			'click',
-			'#transcript-remove',
-			function(e) {
-				$('#transcriptText').val('');
-				$('#transcriptFile').val('');
-				$('#transcript_current').val('');
-				$('#transcript_updated').val('1');
-				$('#transcriptText').prop('disabled', false);
-				$('.transcript-upload-box').removeClass('disabled');
+		}
+	});
+	$(document).on('click', '.cfm-datepicker .input-group .btn', function(e) {
+		e.preventDefault();
+		$("input[name=publish_date]").focus();
+	});
 
-				$('.cfm-episode-transcription .cmf-transcript-wrap').html(transcript_add_default);
-				$('.transcript-upload-box').html(transcript_upload_default);
-			}
-		);
+	$(document).on('click', '.cfm-timepicker .dropdown-menu a.dropdown-item', function(e) {
+		var val = $( this ).text();
+		change_publish_button( $( "input[name=publish_date]" ).val() + ' ' + val );
 
-		/**
-		 * Enable/disable upload/text
-		 */
-		$( document ).on(
-			'change keyup',
-			'#transcriptText',
-			function(e) {
-				if ($(this).val() != '') {
-					$('.transcript-upload-box').addClass('disabled');
-				}
-				else {
-					$('.transcript-upload-box').removeClass('disabled');
-				}
-			}
-		);
-		$( document ).on(
-			'change',
-			'#transcriptFile',
-			function(e) {
-				if ($(this).get(0).files.length === 0) {
-					$('#transcriptText').prop('disabled', false);
+		$('input[name=publish_time]').val( val );
+		$('input[name=publish_time]').trigger('change');
+	});
 
-					$('.transcript-upload-box').html(transcript_upload_default);
-				}
-				else {
-					var filename = $(this).val().replace(/C:\\fakepath\\/i, '');
+	/**
+	 * Artwork image uploader
+	 */
+	$(document).on('click', '#artwork-dropzone', function(e) {
+		e.preventDefault();
 
-					$('#transcriptText').prop('disabled', true);
+		$this = $(this);
 
-					$('.transcript-upload-box').html('<div class="transcript-text">File uploaded: <strong>' + filename + '</strong></div><a id="remove-transcript-file" class="text-danger" href="javascript: void(0);"><i class="fal fa-trash-alt"></i> Remove</a>');
-				}
-			}
-		);
-
-		/**
-		 * Transcript file remove
-		 */
-		$( document ).on(
-			'click',
-			'#remove-transcript-file',
-			function(e) {
-				$('#transcriptFile').val('');
-				$('#transcriptFile').trigger('change');
-			}
-		);
-
-		/**
-		 * LOCALSTORAGE - save shownotes wordpress editor
-		 */
-		if( $.inArray( cfmsync.CFMH_CURRENT_SCREEN, publish_episode_screens) !== -1) {
-			setInterval(function () {
-				const enable_wordpress_editor_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'enable_wordpress_editor');
-				if ( 'on' == enable_wordpress_editor_local ) {
-					tinymce.triggerSave();
-		            var content_html =  '';
-
-		            if($('#wp-post_content_wp-wrap').hasClass('html-active')){ // We are in text mode
-						content_html =  $("#post_content_wp").val();
-					} else { // We are in tinyMCE mode
-					    var activeEditor = tinymce.get('post_content_wp');
-					    if(activeEditor!==null){ // Make sure we're not calling setContent on null
-
-					   	content_html =  activeEditor.getContent();
-					    }
-					}
-
-					localStorage.setItem(cfmsync.CFMH_SHOWID + '_post_content_wp_local', content_html);
-		        }
-	        }, 5*1000);
+		var image_frame;
+		if (image_frame) {
+			image_frame.open();
 		}
 
-		/**
-		 * LOCALSTORAGE - populate fields
-		 */
-		$(window).load(function() {
+		// Define image_frame as wp.media object.
+		image_frame = wp.media({
+			title: 'Select Episode Cover Art',
+			multiple : false,
+			library : {
+				type : 'image',
+			}
+		});
 
-		    if( $.inArray( cfmsync.CFMH_CURRENT_SCREEN, publish_episode_screens) !== -1) {
+		image_frame.on('select', function() {
+			var selection  = image_frame.state().get( 'selection' );
+			var artwork_id = 0;
 
-		     	// show episode details.
-				const post_title_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'post_title');
-				const shownotes_local_html = localStorage.getItem(cfmsync.CFMH_SHOWID + '_shownotes_local_html');
-				const enable_wordpress_editor_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'enable_wordpress_editor');
-				const post_content_wp_local = localStorage.getItem(cfmsync.CFMH_SHOWID + '_post_content_wp_local');
-				const media_url_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'media_url');
-
-				if ( ( '' != post_title_local && undefined !== post_title_local && null !== post_title_local ) || ( null !== shownotes_local_html && '' != shownotes_local_html && '<p><br></p>' != shownotes_local_html ) || ( 'on' == enable_wordpress_editor_local && ( '' != post_content_wp_local && undefined !== post_content_wp_local && null !== post_content_wp_local ) ) || ( '' != media_url_local && undefined !== media_url_local && null !== media_url_local ) ) {
-					$( '#upload-skip' ).trigger('click');
-				}
-
-				// populate post_content_wp.
-				if ( 'on' == enable_wordpress_editor_local ) {
-					$( '#enable_wordpress_editor' ).trigger('click');
-				}
-
-				if ( 'on' == enable_wordpress_editor_local && ( '' != post_content_wp_local && undefined !== post_content_wp_local && null !== post_content_wp_local ) ) {
-
-					if($('#wp-post_content_wp-wrap').hasClass('html-active')){ // We are in text mode
-					   $('#post_content_wp').val(post_content_wp_local);
-					} else { // We are in tinyMCE mode
-					    var activeEditor = tinymce.get('post_content_wp');
-					    if(activeEditor!==null){ // Make sure we're not calling setContent on null
-					        activeEditor.setContent(post_content_wp_local);
-					    }
+			if ( artwork_id == 0 ) {
+				selection.each(
+					function(attachment) {
+						artwork_id = attachment['id'];
 					}
-				}
-
-				// show audio.
-				if ( '' != media_url_local && undefined !== media_url_local && null !== media_url_local ) {
-
-					var filename = media_url_local.split('/').pop().split('#')[0].split('?')[0];
-
-					$( '#upload-audio' ).hide();
-					$( '.cfm-field.cfm-episode-audio-upload' ).hide();
-					$( '.cfm-field.cfm-episode-audio' ).show();
-					$( '.cfm-field.cfm-episode-audio-replace' ).show();
-					$( '.cfm-field.cfm-episode-audio .uploaded-audio-name' ).html( '<i class="fas fa-file-audio"></i> ' + filename );
-					$( '#audio-player source' ).prop( 'src', media_url_local );
-					player.load();
-
-					$( '#cfm-episode-details .cfm-submit button[name=episode_publish]' ).prop( 'disabled', false );
-				}
-
-				// populate artwork.
-				const artwork_url_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'episode_artwork');
-				if ( '' != artwork_url_local && undefined !== artwork_url_local && null !== artwork_url_local ) {
-					$( '#artwork-preview' ).attr( 'src', artwork_url_local );
-				}
-
-				// populate featured image.
-				const featured_image_url_local = localStorage.getItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local');
-				if ( '' != featured_image_url_local && undefined !== featured_image_url_local && null !== featured_image_url_local ) {
-					$( '#featured-image-preview' ).addClass( 'active' );
-					$( '#featured-image-preview' ).attr( 'src', featured_image_url_local );
-					$( '#featured-image-upload' ).val( 'Remove featured image' );
-					$( '#featured-image-upload' ).prop( 'id', 'featured-image-remove' );
-				}
-
-				// show apple podcasts title if checked.
-				const itunes_title_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'itunesTitle');
-				if ( null === itunes_title_local || '' == itunes_title_local ) {
-					$('#post_title_check').prop('checked', false);
-				}
-				else {
-					$('#post_title_check').prop('checked', true);
-					$('#cfm-episode-details .cfm-itunes-episode-title').fadeIn();
-				}
-
-				// cleat tags and categories input.
-				$('#category_parent').val('-1');
-				$('#website_category').val('');
-				$('#website_tags').val('');
-
+				);
 			}
 
-			if ( $.inArray( cfmsync.CFMH_CURRENT_SCREEN, edit_episode_screens) !== -1 ) {
+			if ( artwork_id != 0) {
 
-				var submit_action = cfm_get_url_vars()["action"],
-					eid = cfm_get_url_vars()["eid"];
+				var media_attachment = image_frame.state().get('selection').first().toJSON();
 
-				// LOCALSTORAGE - clear all
-				if ('published' == submit_action) {
-					// local-storage.js
-					var key = cfmsync.CFMH_SHOWID + '_cfm-form-publish-episode_save_storage';
-					localStorage.removeItem(key);
+				if ( media_attachment.url ) {
 
-					// custom.
-					localStorage.removeItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local');
-					localStorage.removeItem(cfmsync.CFMH_SHOWID + '_post_content_wp_local');
-					localStorage.removeItem(cfmsync.CFMH_SHOWID + '_shownotes_local');
-					localStorage.removeItem(cfmsync.CFMH_SHOWID + '_shownotes_local_html');
+					$('#episode_artwork').val(media_attachment.url);
+					$('#episode_artwork_id').val(artwork_id);
+					$('#episode_artwork_width').val(media_attachment.width);
+					$('#episode_artwork_height').val(media_attachment.height);
+					$('#episode_artwork_type').val(media_attachment.mime);
+					$('#episode_artwork_filesize').val(media_attachment.filesizeInBytes);
+					$('#episode_artwork, #episode_artwork_id, #episode_artwork_width, #episode_artwork_height, #episode_artwork_type, #episode_artwork_filesize').trigger('change');
 
-					// Update URL to remove response and action params
-					var new_url = cfmsync.CFMH_ADMINURL + 'admin.php?page=cfm-hosting-edit-episode&show_id=' + cfmsync.CFMH_SHOWID + '&eid=' + eid;
-					setTimeout( function() {
-						window.history.pushState(null, null, new_url );
-					}, 2000 );
+					$this.parent().hide();
+					$('#cfm-artwork-uploader .fd-replace').fadeIn(200);
+					$('#cfm-artwork-uploader .fd-result').html('<img src="' + media_attachment.url + '" width="200" height="200" class="img-fluid">').hide().fadeIn(650);
 				}
 			}
 
 		});
 
+		image_frame.on('open', function() {
+			// On open, get the id from the hidden input.
+			// and select the appropiate images in the media manager.
+			var selection = image_frame.state().get( 'selection' );
+			ids           = $( '#episode_artwork_id' ).val().split( ',' );
+			ids.forEach(function(id) {
+				attachment = wp.media.attachment( id );
+				attachment.fetch();
+				selection.add( attachment ? [ attachment ] : [] );
+			});
+		});
+
+		image_frame.open();
+	});
+
+	$(document).on('click', '#cfm-artwork-uploader .remove-image', function(e) {
+		e.preventDefault();
+		$( '#cfm-artwork-uploader .fd-replace' ).fadeOut(100, function () {
+			$('#cfm-artwork-uploader .fd-uploader' ).show();
+			$('#cfm-artwork-uploader .fd-result').html('<i class="fal fa-image"></i>');
+
+			$('#episode_artwork').val('');
+			$('#episode_artwork_id').val('');
+			$('#episode_artwork_width').val('');
+			$('#episode_artwork_height').val('');
+			$('#episode_artwork_type').val('');
+			$('#episode_artwork_filesize').val('');
+
+			$('#episode_artwork, #episode_artwork_id, #episode_artwork_width, #episode_artwork_height, #episode_artwork_type, #episode_artwork_filesize').trigger('change');
+		});
+	});
+
+	$(document).on('click', '#cfm-artwork-uploader .upload-new-image', function(e) {
+		e.preventDefault();
+		$( '#cfm-artwork-uploader .fd-replace' ).fadeOut(100, function () {
+			$('#cfm-artwork-uploader .fd-uploader' ).show();
+		});
+	});
+
+
+
+	/**
+	 * Featured image uploader
+	 */
+	$( document ).on('click', '#featured-image-dropzone', function(e) {
+		e.preventDefault();
+
+		$this = $(this);
+
+		var image_frame;
+		if ( image_frame ) {
+			image_frame.open();
+		}
+
+		// Define image_frame as wp.media object.
+		image_frame = wp.media({
+			title: 'Select Website Featured Image',
+			multiple : false,
+			library : {
+				type : 'image',
+			}
+		});
+
+		image_frame.on('select', function() {
+			// On close, get selections and save to the hidden input.
+			// plus other AJAX stuff to refresh the image preview.
+			var selection  = image_frame.state().get( 'selection' );
+			var gallery_id = 0;
+
+			if ( gallery_id == 0 ) {
+				selection.each(function(attachment) {
+					gallery_id = attachment['id'];
+				});
+			}
+
+			if ( gallery_id != 0) {
+
+				var media_attachment = image_frame.state().get('selection').first().toJSON();
+
+				if ( media_attachment.url ) {
+
+					$('#featured_image').val(gallery_id);
+					$('#featured_image').trigger('change');
+
+					$this.parent().hide();
+					$('#cfm-featured-image-uploader .fd-replace').fadeIn(200);
+					$('#cfm-featured-image-uploader .fd-result').html('<img src="' + media_attachment.url + '" width="200" height="200" class="img-fluid">').hide().fadeIn(650);
+
+					// LOCALSTORAGE - save featured image data.
+					if( $.inArray( cfmsync.CFMH_CURRENT_SCREEN, publish_episode_screens) !== -1) {
+						localStorage.setItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local', media_attachment.url);
+					}
+
+				}
+			}
+		});
+
+		image_frame.open();
+	});
+
+	$(document).on('click', '#cfm-featured-image-uploader .remove-image', function(e) {
+		e.preventDefault();
+		$( '#cfm-featured-image-uploader .fd-replace' ).fadeOut(100, function () {
+			$('#cfm-featured-image-uploader .fd-uploader' ).show();
+			$('#cfm-featured-image-uploader .fd-result').html('<i class="fal fa-image"></i>');
+
+			$('#featured_image').val('0');
+			$('#featured_image').trigger('change');
+		});
+
+		// LOCALSTORAGE - remove featured image data.
+		localStorage.removeItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local');
+	});
+
+	$(document).on('click', '#cfm-featured-image-uploader .upload-new-image', function(e) {
+		e.preventDefault();
+		$( '#cfm-featured-image-uploader .fd-replace' ).fadeOut(100, function () {
+			$('#cfm-featured-image-uploader .fd-uploader' ).show();
+		});
+	});
+
+	/**
+	 * Change content editor
+	 */
+	$(document).on('click', '#enable_wordpress_editor', function(e) {
+		if ( this.checked ) {
+			$('.cfm-captivate-editor').addClass('hidden');
+			$('.cfm-wordpress-editor').removeClass('hidden');
+		}
+		else {
+			$('.cfm-captivate-editor').removeClass('hidden');
+			$('.cfm-wordpress-editor').addClass('hidden');
+		}
+	});
+
+	/**
+	 * Submit validation
+	 */
+	$(window).keydown(function(e) {
+		// prevent form submission on enter.
+		if ( e.keyCode == 13 && e.target.tagName.toLowerCase() != 'textarea' ) {
+			e.preventDefault();
+			return false;
+		}
+	});
+
+	var clicked_button = null;
+	$(document).on('submit', '#cfm-form-publish-episode', function(e) {
+		var $this = $('#' + clicked_button),
+			$this_html = $this.html();
+
+		$('button[type=submit]').prop('disabled', true);
+		$this.html('<i class="fas fa-spinner fa-spin me-2"></i> Processing...');
+		$('#episode-cancel').addClass('disabled');
+
+		var post_title 	 = $('input[name=post_title]').val(),
+		shownotes        = $('textarea[name=post_content]').val(),
+		seo_description  = $('#seo_description').val(),
+		media_id         = $('input[name=media_id]').val(),
+		errors           = 0,
+		error_feedback   = '';
+
+		if ( media_id == '' && clicked_button != "episode_draft") {
+			$('#cfm-audio-uploader').addClass('invalid-control');
+			if ( ! $('#cfm-audio-uploader-error').length ) {
+				$('<div id="cfm-audio-uploader-error" class="invalid-feedback">You must upload an audio for your episode.</div>').insertAfter('#cfm-audio-uploader');
+			}
+			errors += 1;
+			error_feedback += '<br>You must upload an audio for your episode.<br>';
+		}
+		if ( post_title == '' ) {
+			$('input[name=post_title]').addClass('is-invalid');
+			if ( ! $( '#post_title-error' ).length ) {
+				$( '<div id="post_title-error" class="invalid-feedback">You must enter a title for your episode.</div>' ).insertAfter('input[name=post_title]');
+			}
+			errors += 1;
+			error_feedback += '<br>Episode Title: Check for any unusual or invalid characters, remove and resave.<br>';
+		}
+		if ( ( shownotes == '' || shownotes == '<p><br></p>' ) && $('.cfm-captivate-editor').is(":visible") && clicked_button != "episode_draft" ) {
+			$( '#cfm-field-wpeditor' ).addClass( 'invalid-control is-invalid' );
+			$( '.cfm-episode-shownotes .ql-toolbar.ql-snow' ).addClass('is-invalid');
+			if ( ! $( '#captivate-shownotes-error' ).length ) {
+				$( '<div id="captivate-shownotes-error" class="invalid-feedback">You must enter show notes for your episode.</div>' ).insertAfter( '#cfm-field-wpeditor' );
+			}
+			errors += 1;
+			error_feedback += '<br>Episode Show NOTES: Check for any unusual or invalid characters, remove and resave.<br>';
+		}
+
+		if ( $('.cfm-wordpress-editor').is(":visible") && clicked_button != "episode_draft" ) {
+
+			var wordpress_editor_shownotes = '';
+
+			if ( $('#wp-post_content_wp-wrap').hasClass('html-active') ) {
+				wordpress_editor_shownotes = $('#post_content_wp').val();
+			}
+			else {
+				var activeEditor = tinymce.get('post_content_wp');
+				wordpress_editor_shownotes = activeEditor.getContent();
+			}
+
+			if ( wordpress_editor_shownotes == '' ) {
+				$( '#wp-post_content_wp-wrap' ).addClass( 'invalid-control' );
+				if ( ! $( '#wp-shownotes-error' ).length ) {
+					$( '<div id="wp-shownotes-error" class="invalid-feedback">You must enter show notes for your episode.</div>' ).insertAfter( '#wp-post_content_wp-wrap' );
+				}
+				errors += 1;
+				error_feedback += '<br>Episode Show NOTES: Check for any unusual or invalid characters, remove and resave.<br>';
+			}
+		}
+
+		if ( seo_description.length > 300 ) {
+			$('#seo_description').addClass('is-invalid');
+			errors += 1;
+			error_feedback += '<br>SEO Description: length must be less than or equal to 300 characters long.<br>';
+		}
+
+		var artwork_id = $( 'input[name=episode_artwork_id]' ).val(),
+			artwork_width = $( 'input[name=episode_artwork_width]' ).val(),
+			artwork_height = $( 'input[name=episode_artwork_height]' ).val(),
+			artwork_type = $( 'input[name=episode_artwork_type]' ).val(),
+			artwork_filesize = $( 'input[name=episode_artwork_filesize]' ).val();
+		if ( artwork_id != '' && ( artwork_width != artwork_height || ( artwork_width < 1400 || artwork_width > 3000 ) || ( artwork_height < 1400 || artwork_height > 3000 ) || artwork_filesize > 500000 || ( artwork_type != "image/jpeg" && artwork_type != "image/jpg" && artwork_type != "image/png" ) ) ) {
+			$('#cfm-artwork-uploader').addClass('invalid-control');
+			if ( ! $( '#cfm-artwork-uploader-error' ).length ) {
+				$( '<div id="cfm-artwork-uploader-error" class="invalid-feedback mt-4">Your artwork should be a minimum of 1,400 pixels square and a maximum of 3,000 pixels square with less than 500kb in filesize. Both height and width must be the same.</div>' ).insertAfter( '#cfm-artwork-uploader' );
+			}
+			errors += 1;
+			error_feedback += '<br>Episode Artwork: Follow the artwork specifications, remove and reupload.<br>';
+		}
+
+		if ( errors > 0 ) {
+			cfmsync_toaster('error', '<strong>Could not save - a setting is invalid</strong>' + error_feedback);
+			$('button[type=submit]').prop('disabled', false);
+			$('#episode-cancel').removeClass('disabled');
+			$this.html($this_html);
+			e.preventDefault();
+			return false;
+		}
+
+	});
+	$(document).on('click', 'button[name="episode_draft"]', function(e) {
+		clicked_button = 'episode_draft';
+		$('input[name="submit_action"]').val('draft');
+	});
+	$(document).on('click', 'button[name="episode_update"]', function(e) {
+		clicked_button = 'episode_update';
+		$('input[name="submit_action"]').val('update');
+	});
+	$(document).on('click', 'button[name="episode_publish"]', function(e) {
+		clicked_button = 'episode_publish';
+		$('input[name="submit_action"]').val('publish');
+	});
+
+	$(document).on('keyup', '#post_title', function(e) {
+		if ( $(this).val() != '' ) {
+			$(this).removeClass( 'is-invalid' );
+			$( '#post_title-error' ).remove();
+		}
+	});
+
+	if ( 'on' == $('#enable_wordpress_editor').val() ) {
+		if ( $('#wp-post_content_wp-wrap').hasClass('html-active') ) {
+			$(document).on('keyup', '#post_content_wp', function(e) {
+				if ( $(this).val() != '' ) {
+					$('#wp-post_content_wp-wrap').removeClass( 'invalid-control is-invalid' );
+					$('#wp-shownotes-error').remove();
+				}
+			});
+		}
+		else {
+			var activeEditor = tinymce.get('post_content_wp');
+			if ( activeEditor!==null) {
+				activeEditor.on('keyup',function(e){
+					$('#wp-post_content_wp-wrap').removeClass( 'invalid-control is-invalid' );
+					$('#wp-shownotes-error').remove();
+				});
+			}
+		}
 	}
-);
+
+	$ (document).on('keyup', '#seo_description', function(e) {
+		var seo_description_width = $(this).val().length < 155 ? $(this).val().length / 155 * 100 : 100;
+		var seo_description_color = "orange";
+		if(seo_description_width >= 50 && seo_description_width <= 99) {
+			seo_description_color = "#29ab57";
+		} else if(seo_description_width >= 100) {
+			seo_description_color = "#dc3545";
+		}
+		$('.cfm-seo-description-progress').css( "background-color", seo_description_color );
+		$('.cfm-seo-description-progress').css( "width", seo_description_width + '%' );
+
+	});
+
+	/**
+	 * Generate slug
+	 */
+	$(document).on('focus', '#post_title.post-title-empty', function(e) {
+		$this = $(this);
+
+		$this.blur(function() {
+			if ( $this.hasClass('post-title-empty') ) {
+				$('input[name=post_name]').val(cfm_convert_to_slug($this.val()));
+
+				if ( $this.val() != '' ) {
+					$this.removeClass('post-title-empty');
+				}
+			}
+		});
+	});
+
+	/**
+	 * Edit slug
+	 */
+	$(document).on('keyup', 'input[name=post_name]', function(e) {
+		$(this).val(cfm_convert_to_slug($(this).val()));
+	});
+
+	/**
+	 * Add category
+	 */
+	$(document).on('click', '#add-website-category', function(e) {
+		e.preventDefault();
+
+		var category_parent   = $('select[name=category_parent]').val(),
+			category          = $('input[name=website_category]').val();
+
+		if ( category != '' ) {
+			$.ajax({
+				url: cfmsync.ajaxurl,
+				type: 'post',
+				dataType: 'json',
+				data: {
+					action: 'add-webcategory',
+					category_parent: category_parent,
+					category: category,
+					_nonce: cfmsync.ajaxnonce
+				},
+				success: function(response) {
+					if ( 'error' == response ) {
+						cfmsync_toaster('error', 'Something went wrong. Please refresh the page and try again.');
+					}
+					else {
+						$('.cfm-website-categories-wrap > ul').prepend(response.cat_checklist);
+
+						$('.cfm-category-parent').html(response.cat_parent);
+
+						$('select[name=category_parent]').prop('selectedIndex', 0);
+						$('input[name=website_category]').val('');
+
+						cfmsync_toaster('success', 'Category has been successfully added and selected.');
+					}
+				},
+				error: function(response) {
+					cfmsync_toaster('error', 'Category already exists.');
+				}
+			});
+		}
+		else {
+			$('input[name=website_category]').addClass('is-invalid is-sub-validation').focus();
+		}
+
+		e.preventDefault();
+	});
+
+	/**
+	 * Add tags
+	 */
+	$(document).on('click', '#add-website-tags', function(e) {
+		e.preventDefault();
+
+		var tags = $('input[name=website_tags]').val(),
+			tags_array = tags.split(','),
+			tags_input = [],
+			tags_input_lower = [],
+			tags_existing = [];
+
+		for ( i=0;i<tags_array.length;i++ ) {
+			tags_input_lower.push($.trim(tags_array[i].toLowerCase()));
+		}
+
+		$('.cfm-website-tags-wrap ul li label').each(function() {
+			var tags_check = $.trim($(this).text().toLowerCase());
+
+			// check mark existing tags.
+			if ( $.inArray(tags_check, tags_input_lower) !== -1 ) {
+				$(this).find('input[type=checkbox]').prop('checked', true);
+			}
+
+			tags_existing.push(tags_check);
+		});
+
+		// get new tags.
+		for (i=0;i<tags_array.length;i++) {
+			var new_tags_lower = $.trim(tags_array[i].toLowerCase());
+
+			if ( $.inArray(new_tags_lower, tags_existing) == -1 ) {
+				tags_input.push($.trim(tags_array[i]));
+			}
+		}
+
+		if ( tags_input.length !== 0 ) {
+			$.ajax({
+				url: cfmsync.ajaxurl,
+				type: 'post',
+				data: {
+					action: 'add-webtags',
+					tags: tags_input.toString(),
+					_nonce: cfmsync.ajaxnonce
+				},
+				success: function(response) {
+					if ( 'error' == response ) {
+						cfmsync_toaster('error', 'Something went wrong. Please refresh the page and try again.');
+					}
+					else {
+						$('.cfm-website-tags-wrap > ul').prepend(response);
+
+						$('input[name=website_tags]').val('');
+						cfmsync_toaster('success', 'Tag(s) has been successfully added and selected.');
+					}
+				}
+			});
+		}
+		else {
+			$( 'input[name=website_tags]').val('');
+		}
+
+		if (tags == '') {
+			$('input[name=website_tags]').addClass('is-invalid is-sub-validation').focus();
+		}
+
+		e.preventDefault();
+	});
+
+	/**
+	 * Transcript defaults
+	 */
+	var transcript_file = 'input[name=transcript_file]',
+		transcript_text = 'textarea[name=transcript_text]',
+		transcript_current = 'textarea[name=transcript_current]',
+		transcript_type = 'input[name=transcript_type]',
+		transcript_updated = 'input[name=transcript_updated]',
+		transcript_add_default = '<a id="transcript-add" data-bs-toggle="modal" data-bs-target="#transcript-modal" href="#"><i class="fal fa-file-alt me-2"></i> Add a transcript to this episode </a>',
+		transcript_upload_default = '<div class="transcript-text">Have a transcript file? Upload it directly... </div><a id="upload-transcript" href="javascript: void(0);"><i class="fal fa-cloud-upload" aria-hidden="true"></i> Upload File</a>';
+
+	/**
+	 * Transcript upload
+	 */
+	$(document).on('click', '#upload-transcript', function(e) {
+		$(transcript_file).focus().trigger('click');
+	});
+
+	/**
+	 * Transcript update
+	 */
+	$(document).on('click', '#update-transcript', function(e) {
+		if ( $(transcript_file).get(0).files.length === 0 ) {
+			if ('' != $(transcript_text).val()) {
+				var transcript_text_new = '<strong>' + cfm_truncate($(transcript_text).val(), 20) + '</strong> <a id="cfm-transcript-edit" class="float-end" data-bs-toggle="modal" data-bs-target="#transcript-modal" href="#"><i class="fal fa-edit"></i> Edit</a><div class="mt-2"><a id="transcript-remove" class="transcript-remove text-danger" href="javascript: void(0);"><i class="fal fa-trash-alt"></i> Remove</a></div>';
+			}
+			else {
+				var transcript_text_new = transcript_add_default;
+			}
+
+			$(transcript_current).val($(transcript_text).val());
+			$(transcript_type).val('text');
+		}
+		else {
+			var filename = $(transcript_file).val().replace(/C:\\fakepath\\/i, '');
+
+			var transcript_text_new = '<strong>' + filename + '</strong> <a id="cfm-transcript-edit" class="float-end" data-bs-toggle="modal" data-bs-target="#transcript-modal" href="#"><i class="fal fa-undo fa-flip-horizontal"></i> Replace</a><div class="mt-2"><a id="transcript-remove" class="transcript-remove text-danger" href="javascript: void(0);"><i class="fal fa-trash-alt"></i> Remove</a></div>';
+
+			$(transcript_current).val(filename);
+			$(transcript_type).val('file');
+		}
+
+		$(transcript_updated).val('1');
+
+		$('.cfm-episode-transcription .cmf-transcript-wrap').html(transcript_text_new);
+		$("#transcript-modal").modal('hide');
+	});
+
+	/**
+	 * Transcript cancel
+	 */
+	$(document).on('click', '#cancel-transcript, #close-transcript', function(e) {
+		if ( 'file' == $(transcript_type).val() ) {
+			$(transcript_text).val('');
+			$('.transcript-upload-box').html('<div class="transcript-text">File uploaded: <strong>' + $(transcript_current).val() + '</strong></div><a id="remove-transcript-file" class="text-danger" href="javascript: void(0);"><i class="fal fa-trash-alt"></i> Remove</a>');
+			$(transcript_text).prop('disabled', true);
+			$('.transcript-upload-box').removeClass('disabled');
+		}
+		else {
+			$(transcript_text).val($(transcript_current).val());
+			$('.transcript-upload-box').html(transcript_upload_default);
+			$('.transcript-upload-box').addClass('disabled');
+			$(transcript_text).prop('disabled', false);
+		}
+	});
+
+	/**
+	 * Transcript remove
+	 */
+	$(document).on('click', '#transcript-remove', function(e) {
+		$(transcript_text).val('');
+		$(transcript_file).val('');
+		$(transcript_current).val('');
+		$(transcript_updated).val('1');
+		$(transcript_text).prop('disabled', false);
+		$('.transcript-upload-box').removeClass('disabled');
+
+		$('.cfm-episode-transcription .cmf-transcript-wrap').html(transcript_add_default);
+		$('.transcript-upload-box').html(transcript_upload_default);
+	});
+
+	/**
+	 * Enable/disable upload/text
+	 */
+	$(document).on('change keyup', transcript_text, function(e) {
+		if ( $(this).val() != '' ) {
+			$('.transcript-upload-box').addClass('disabled');
+		}
+		else {
+			$('.transcript-upload-box').removeClass('disabled');
+		}
+	});
+
+	$( document ).on('change', transcript_file, function(e) {
+		if ( $(this).get(0).files.length === 0 ) {
+			$(transcript_text).prop('disabled', false);
+
+			$('.transcript-upload-box').html(transcript_upload_default);
+		}
+		else {
+			var filename = $(this).val().replace(/C:\\fakepath\\/i, '');
+
+			$(transcript_text).prop('disabled', true);
+
+			$('.transcript-upload-box').html('<div class="transcript-text">File uploaded: <strong>' + filename + '</strong></div><a id="remove-transcript-file" class="text-danger" href="javascript: void(0);"><i class="fal fa-trash-alt"></i> Remove</a>');
+		}
+	});
+
+	/**
+	 * Transcript file remove
+	 */
+	$(document).on('click', '#remove-transcript-file', function(e) {
+		$(transcript_file).val('');
+		$(transcript_file).trigger('change');
+	});
+
+	/**
+	 * Change button text
+	 */
+	$(window).load(function() {
+		if ( cfm_is_datetime_future($( "input[name=publish_date]" ).val() + ' ' + $( "input[name=publish_time]" ).val()) === true ) {
+			$('button[name=episode_update] , button[name=episode_publish]').html('Schedule Episode');
+		}
+	});
+
+	/**
+	 * Field validation
+	 */
+	$(document).on('keyup', '.form-control.is-invalid', function(e) {
+		if ( $(this).val() != '' ) {
+			$(this).removeClass('is-invalid is-sub-validation');
+		}
+	});
+
+	$(document).on('focus', '.form-control.is-sub-validation', function(e) {
+		$(this).blur(function() {
+			$(this).removeClass('is-invalid is-sub-validation');
+		});
+	});
+
+	/**
+	 * Duplicate episode
+	 */
+	 $(document).on('click', '#cfm-duplicate-episode', function(e) {
+		e.preventDefault();
+
+		var $this = $(this),
+			$this_html = $this.html(),
+			post_id = $this.attr('data-reference'),
+			_nonce = $this.attr('data-nonce');
+
+		$.ajax({
+			url: cfmsync.ajaxurl,
+			type: 'post',
+			data: {
+				action: 'duplicate-episode',
+				_nonce: _nonce,
+				post_id: post_id,
+			},
+			dataType: 'json',
+			beforeSend: function() {
+				$this.prop('disabled', true);
+				$this.siblings('button').prop('disabled', true);
+				$this.html('<i class="fas fa-spinner fa-spin me-2"></i> Duplicating episode...');
+			},
+			success: function(response) {
+				$this.prop('disabled', false);
+				$this.siblings('button').prop('disabled', false);
+				$this.html($this_html);
+				$('#confirmation-modal').modal('hide');
+
+				if ( 'success' == response.output ) {
+					cfmsync_toaster('success', response.message);
+					window.location.replace(response.redirect_url);
+				}
+				else {
+					cfmsync_toaster('error', response.message);
+				}
+			}
+		});
+
+		e.preventDefault();
+    });
+
+	/**
+	 * Variable confirmation modal
+	 */
+	 $('.cfm-insert-variable-modal').on('show.bs.modal', function (e) {
+		var button = $(e.relatedTarget),
+			reference_id = button.data('confirmation-reference'),
+			data_type = button.data('type'),
+			modal = $(this);
+		modal.find('.modal-body input[name=dt_type]').val(['dynamic']);
+		modal.find('.modal-footer .modal-confirm').attr('data-reference', reference_id);
+		modal.find('.modal-footer .modal-confirm').attr('data-type', data_type);
+	});
+	$('.cfm-insert-variable-modal').on('hidden.bs.modal', function (e) {
+		var modal = $(this);
+		modal.find('.modal-footer .modal-confirm').removeAttr('data-reference');
+		modal.find('.modal-footer .modal-confirm').removeAttr('data-type');
+	});
+
+	/**
+	 * LOCALSTORAGE - save shownotes wordpress editor every 5 seconds.
+	 */
+	if ( $.inArray(cfmsync.CFMH_CURRENT_SCREEN, publish_episode_screens) !== -1 ) {
+		setInterval(function () {
+			const enable_wordpress_editor_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'enable_wordpress_editor');
+			if ( 'on' == enable_wordpress_editor_local ) {
+				tinymce.triggerSave();
+				var content_html =  '';
+
+				if ( $('#wp-post_content_wp-wrap').hasClass('html-active') ) {
+					content_html =  $("#post_content_wp").val();
+				}
+				else {
+					var activeEditor = tinymce.get('post_content_wp');
+					if ( activeEditor!==null) {
+						content_html = activeEditor.getContent();
+					}
+				}
+
+				localStorage.setItem(cfmsync.CFMH_SHOWID + '_post_content_wp_local', content_html);
+			}
+		}, 5*1000);
+	}
+
+	/**
+	 * LOCALSTORAGE - populate fields.
+	 */
+	$(window).load(function() {
+
+		$('.cfm-shownotes-editor').fadeIn();
+
+		if ( $.inArray( cfmsync.CFMH_CURRENT_SCREEN, publish_episode_screens) !== -1 ) {
+
+			const enable_wordpress_editor_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'enable_wordpress_editor');
+			const post_content_wp_local = localStorage.getItem(cfmsync.CFMH_SHOWID + '_post_content_wp_local');
+			const media_url_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'media_url');
+			const media_name_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'media_name');
+			const media_bit_rate_str_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'media_bit_rate_str');
+			const media_duration_str_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'media_duration_str');
+
+			// populate post_content_wp.
+			if ( 'on' == enable_wordpress_editor_local ) {
+				$( '#enable_wordpress_editor' ).trigger('click');
+			}
+
+			if ( 'on' == enable_wordpress_editor_local && ( '' != post_content_wp_local && undefined !== post_content_wp_local && null !== post_content_wp_local ) ) {
+
+				if ( $('#wp-post_content_wp-wrap').hasClass('html-active') ) {
+					$('#post_content_wp').val(post_content_wp_local);
+				}
+				else {
+					var activeEditor = tinymce.get('post_content_wp');
+					if ( activeEditor!==null ) { // Make sure we're not calling setContent on null.
+						activeEditor.setContent(post_content_wp_local);
+					}
+				}
+			}
+
+			// show audio.
+			if ( '' != media_url_local && undefined !== media_url_local && null !== media_url_local ) {
+				$( '#cfm-audio-uploader .dropzone-uploader' ).hide();
+				$('#cfm-audio-uploader .dropzone-result').html( '<audio controls="controls" preload="none"><source type="audio/mpeg" src="' + media_url_local + '"> Your browser does not support the audio element. </audio><div class="dropzone-result-info d-flex justify-content-between"><div class="result-info"><strong>' + media_name_local +'</strong> <br>' + media_bit_rate_str_local + ' | ' + media_duration_str_local + '</div><div class="result-actions"><button class="replace-audio btn btn-outline-dark">Replace audio file</button></div></div>' );
+
+				$('#episode_draft, #episode_update').prop('disabled', false);
+			}
+
+			// populate artwork.
+			const artwork_url_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'episode_artwork');
+			if ( '' != artwork_url_local && undefined !== artwork_url_local && null !== artwork_url_local ) {
+				$('#cfm-artwork-uploader .fd-uploader').hide();
+				$('#cfm-artwork-uploader .fd-replace').show();
+				$('#cfm-artwork-uploader .fd-result').html('<img src="' + artwork_url_local + '" width="200" height="200" class="img-fluid">');
+			}
+
+			// populate featured image.
+			const featured_image_url_local = localStorage.getItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local');
+			if ( '' != featured_image_url_local && undefined !== featured_image_url_local && null !== featured_image_url_local ) {
+				$('#cfm-featured-image-uploader .fd-uploader').hide();
+				$('#cfm-featured-image-uploader .fd-replace').show();
+				$('#cfm-featured-image-uploader .fd-result').html('<img src="' + featured_image_url_local + '" width="200" height="200" class="img-fluid">');
+			}
+
+			// show apple podcasts title if checked.
+			const itunes_title_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'itunes_title');
+			if ( '' != itunes_title_local && undefined !== itunes_title_local && null !== itunes_title_local ) {
+				$('input[name=post_title_check]').prop('checked', true);
+				$('.cfm-itunes-title').show();
+			}
+			else {
+				$('input[name=post_title_check]').prop('checked', false);
+			}
+
+			// clear tags and categories input.
+			$('select[name=category_parent]').val('-1');
+			$('input[name=website_category]').val('');
+			$('input[name=website_tags]').val('');
+		}
+
+		if ( $.inArray(cfmsync.CFMH_CURRENT_SCREEN, edit_episode_screens) !== -1 ) {
+			var action_result = cfm_get_url_vars()["action"],
+				eid = cfm_get_url_vars()["eid"];
+
+			// LOCALSTORAGE - clear all.
+			if ( 'published' == action_result || 'failed' == action_result ) {
+				// local-storage.js
+				var key = cfmsync.CFMH_SHOWID + '_cfm-form-publish-episode_save_storage';
+				localStorage.removeItem(key);
+
+				// custom.
+				localStorage.removeItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local');
+				localStorage.removeItem(cfmsync.CFMH_SHOWID + '_post_content_wp_local');
+
+				// quilljs.js.
+				localStorage.removeItem(cfmsync.CFMH_SHOWID + '_shownotes_local');
+				localStorage.removeItem(cfmsync.CFMH_SHOWID + '_shownotes_local_html');
+
+				// Update URL to remove response and action params
+				var new_url = cfmsync.CFMH_ADMINURL + 'admin.php?page=cfm-hosting-edit-episode&show_id=' + cfmsync.CFMH_SHOWID + '&eid=' + eid;
+				setTimeout(function() {
+					window.history.pushState(null, null, new_url);
+				}, 2000);
+			}
+		}
+
+	});
+
+});

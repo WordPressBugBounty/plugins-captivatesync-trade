@@ -1,0 +1,211 @@
+@import "utilities/variables";
+@import "utilities/mixins";
+
+#wpbody-content .wrap {
+    .cfm-data-table {
+        thead {
+            th {
+                padding: 10px 12px;
+                vertical-align: middle;
+                border-color: #e8e8e8;
+                color: $secondary-text-color;
+                font-size: 14px;
+                letter-spacing: 1px;
+                font-weight: 400;
+
+                &.cfm-th-num {
+                    padding-left: 0;
+                }
+                &.cfm-th-date {
+                    min-width: 120px;
+                }
+                &.cfm-th-status {
+                    min-width: 160px;
+                }
+                &.cfm-th-actions {
+                    min-width: 240px;
+                }
+            }
+        }
+
+        tbody {
+            td {
+                padding: 15px 12px;
+                vertical-align: middle;
+                border-color: #e8e8e8;
+                &.cfm-td-num {
+                    padding-left: 0;
+                }
+                .btn {
+                    @include button-table;
+                }
+                &.cfm-td-actions {
+                    text-align: right;
+                    padding-right: 0;
+                }
+                span {
+                    &.status {
+                        padding: 6px 10px;
+                        font-size: 14px;
+                        font-weight: 400;
+                        border-radius: 30px;
+                        &.published {
+                            background-color: #e4f2e8;
+                            color: #4ca663;
+                        }
+                        &.scheduled {
+                            background-color: #fef3df;
+                            color: #c27e00;
+                        }
+                        &.exclusive {
+                            background-color: #fce9ed;
+                            color: #b26073;
+                        }
+                        &.early-access {
+                            background-color: #e1f7fe;
+                            color: #0489ae;
+                        }
+                        &.draft {
+                            background-color: #e8eaec;
+                            color: #647381;
+                        }
+                        &.expired {
+                            background-color: #fae1e3;
+                            color: #dc3545;
+                        }
+                        .amie-icon {
+                            height: 20px;
+                            margin-top: -2px;
+                        }
+                    }
+                }
+                &.cfm-td-amie {
+                    span {
+                        padding: 0;
+                        i.status-bullet {
+                            width: 8px;
+                            height: 8px;
+                            border-radius: 50%;
+                            background-color: #000;
+                            display: inline-block;
+                        }
+                        &.processing {
+                            color: #c27e00;
+                            i {
+                                background-color: #c27e00;
+                            }
+                        }
+                        &.complete {
+                            color: #4ca663;
+                            i {
+                                background-color: #4ca663;
+                            }
+                        }
+                        &.failed {
+                            color: #dc3545;
+                            i {
+                                background-color: #dc3545;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        .dataTables_wrapper {
+            .dataTables_filter {
+                width: 100%;
+                float: none;
+                text-align: left;
+                display: flex;
+                margin-bottom: 20px;
+                label {
+                    margin: 0;
+                    display: flex;
+                    justify-content: flex-start;
+                    flex: 0 0 50%;
+                    position: relative;
+                    i {
+                        position: absolute;
+                        left: 12px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                    }
+                }
+                .filter-actions {
+                    flex: 1 1 auto;
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: flex-end;
+                }
+            }
+
+            table.dataTable.no-footer {
+                border-color: #e8e8e8;
+            }
+            .dataTables_info {
+                font-size: 14px;
+                font-weight: 400;
+                padding: 15px 15px 15px 0;
+                color: $secondary-text-color;
+            }
+            .dataTables_paginate {
+                padding: 15px 0 15px 15px;
+
+                .paginate_button {
+                    font-size: 14px;
+                    color: #1f2124;
+                    font-weight: 400;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    border: 0;
+
+                    &.disabled {
+                        color: #ccc !important;
+                    }
+                    &:hover, &.current:hover {
+                        background: none;
+                        color: #1f2124 !important;
+                    }
+                    &.current {
+                        z-index: 2;
+                        text-decoration: none;
+                        background: #cad8ef !important;
+                        font-weight: 600;
+                        border: 0;
+                        color: #1f2124;
+                    }
+                }
+
+            }
+        }
+
+        table.dataTable {
+            thead {
+                .cfm-th-num {
+                    background-position: 42px center;
+                }
+                .cfm-th-title {
+                    background-position: 94px center;
+                }
+                .cfm-th-date {
+                    background-position: 70px center;
+                }
+                .cfm-th-status {
+                    background-position: 145px center;
+                }
+            }
+
+            tbody {
+                td.cfm-td-btn {
+                    padding-left: 5px;
+                    padding-right: 5px;
+                }
+            }
+        }
+
+    }
+
+}
+
+

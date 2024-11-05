@@ -1,0 +1,204 @@
+/* Grid Layout */
+.cfm-episodes-grid {
+    display: flex;
+	flex-wrap: wrap;
+	width: 100%;
+	justify-content: flex-start;
+
+    &:before, &:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+    .cfm-episode-wrap {
+        height: auto;
+        padding: 0 15px;
+        display: inline-block;
+        width: 33.33%;
+        flex: 0 1 33.33%;
+        margin-bottom: 30px;
+
+        &:before, &:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+    }
+
+    &.cfm-episodes-cols-2 {
+        .cfm-episode-wrap {
+            width: 50%;
+            flex: 0 1 50%;
+        }
+    }
+    &.cfm-episodes-cols-3 {
+        .cfm-episode-wrap {
+            width: 33.33%;
+            flex: 0 1 33.33%;
+        }
+    }
+    &.cfm-episodes-cols-4 {
+        .cfm-episode-wrap {
+            width: 25%;
+	        flex: 0 1 25%;
+        }
+    }
+    &.cfm-episodes-cols-5 {
+        .cfm-episode-wrap {
+            width: 20%;
+	        flex: 0 1 20%;
+        }
+    }
+    &.cfm-episodes-cols-6 {
+        .cfm-episode-wrap {
+            width: 16.66%;
+	        flex: 0 1 16.66%;
+        }
+    }
+
+    .cfm-episode-player {
+        margin-bottom: 20px;
+    }
+    .cfm-episode-image {
+        margin-bottom: 20px;
+    }
+    .cfm-episode-title {
+        margin-bottom: 20px;
+    }
+    .cfm-episode-content {
+        margin-bottom: 20px;
+    }
+}
+
+/* List Layout */
+.cfm-episodes-list {
+    width: 100%;
+
+    &:before, &:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+    .cfm-episode-wrap {
+        padding-bottom: 40px;
+
+        &:before, &:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+    }
+
+    .cfm-episode-player {
+        margin-bottom: 20px;
+    }
+    .cfm-episode-image {
+        margin-bottom: 20px;
+    }
+    .cfm-episode-title {
+        margin-bottom: 20px;
+    }
+    .cfm-episode-content {
+        margin-bottom: 20px;
+    }
+    .cfm-has-image-beside {
+        display: flex;
+        width: 100%;
+    }
+    .cfm-episode-image-right {
+        float: right;
+        max-width: 33%;
+        flex: 0 1 33%;
+
+        .cfm-episode-image {
+            margin-bottom: 0;
+            margin-left: 20px;
+        }
+    }
+    .cfm-episode-image-left {
+        float: left;
+        max-width: 33%;
+        flex: 0 1 33%;
+
+        .cfm-episode-image {
+            margin-bottom: 0;
+            margin-right: 20px;
+        }
+    }
+
+    .cfm-episode-content-right {
+        float: left;
+        max-width: 67%;
+        flex: 0 1 67%;
+
+        .cfm-episode-title {
+            h1, h2, h3, h4, h5, h6 {
+                margin: 0;
+            }
+        }
+    }
+    .cfm-episode-content-left {
+        float: left;
+        max-width: 67%;
+        flex: 0 1 67%;
+    }
+}
+
+/* Pagination */
+.cfm-episodes-pagination {
+	text-align: center;
+	padding: 20px 15px;
+
+    .page-numbers {
+        padding: 4px 6px;
+    }
+}
+
+.cfm-episodes-loadmore {
+    text-align: center;
+    padding: 20px 15px;
+}
+
+/* Medium Devices, Desktops */
+@media only screen and (max-width : 991px) {
+	.cfm-episodes-grid.cfm-episodes-cols-3 .cfm-episode-wrap {
+		width: 50%;
+		flex: 0 1 50%;
+	}
+	.cfm-episodes-grid.cfm-episodes-cols-4 .cfm-episode-wrap {
+		width: 33.33%;
+		flex: 0 1 33.33%;
+	}
+	.cfm-episodes-grid.cfm-episodes-cols-5 .cfm-episode-wrap {
+		width: 33.33%;
+		flex: 0 1 33.33%;
+	}
+	.cfm-episodes-grid.cfm-episodes-cols-6 .cfm-episode-wrap {
+		width: 33.33%;
+		flex: 0 1 33.33%;
+	}
+}
+
+/* Small Devices, Tablets */
+@media only screen and (max-width : 767px) {
+	.cfm-episodes-grid.cfm-episodes-cols-2 .cfm-episode-wrap {
+		width: 100%;
+		flex: 0 1 100%;
+	}
+	.cfm-episodes-grid.cfm-episodes-cols-3 .cfm-episode-wrap {
+		width: 100%;
+		flex: 0 1 100%;
+	}
+	.cfm-episodes-grid.cfm-episodes-cols-4 .cfm-episode-wrap {
+		width: 100%;
+		flex: 0 1 100%;
+	}
+	.cfm-episodes-grid.cfm-episodes-cols-5 .cfm-episode-wrap {
+		width: 100%;
+		flex: 0 1 100%;
+	}
+	.cfm-episodes-grid.cfm-episodes-cols-6 .cfm-episode-wrap {
+		width: 100%;
+		flex: 0 1 100%;
+	}
+}
