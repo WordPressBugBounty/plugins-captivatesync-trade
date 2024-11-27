@@ -44,7 +44,7 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 				wp_enqueue_media();
 				wp_enqueue_script( 'quilljs', CFMH_URL . 'vendor/quill/quill.min.js', array(), '1.3.6' );
 				wp_enqueue_style( 'quilljs', CFMH_URL . 'vendor/quill/quill.snow.css', array(), '1.3.62' );
-				wp_enqueue_script( 'quilljs-script', CFMH_URL . 'assets/js/dist/quilljs-min.js', array(), '1.3.6' );
+				wp_enqueue_script( 'quilljs-script', CFMH_URL . 'captivate-sync-assets/js/dist/quilljs-min.js', array(), '1.3.6' );
 
 				wp_enqueue_style( 'jquery-ui-theme', CFMH_URL . 'vendor/jquery-ui/jquery-ui.min.css', array(), '1.12.1' );
 				wp_enqueue_script( 'jquery-ui-datepicker' );
@@ -52,9 +52,9 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 				wp_enqueue_script( 'dropzone', CFMH_URL . 'vendor/dropzone/dropzone.min.js', array(), '5.7.0' );
 				wp_enqueue_style( 'dropzone', CFMH_URL . 'vendor/dropzone/dropzone.min.css' );
 
-				wp_enqueue_script( 'savestorage', CFMH_URL . 'assets/js/dist/local-storage-min.js', array(), CFMH_VERSION );
+				wp_enqueue_script( 'savestorage', CFMH_URL . 'captivate-sync-assets/js/dist/local-storage-min.js', array(), CFMH_VERSION );
 
-				wp_register_script( 'cfm_script', CFMH_URL . 'assets/js/dist/publish-episode-min.js', array( 'jquery' ), CFMH_VERSION );
+				wp_register_script( 'cfm_script', CFMH_URL . 'captivate-sync-assets/js/dist/publish-episode-min.js', array( 'jquery' ), CFMH_VERSION );
 				wp_localize_script( 'cfm_script', 'cfm_script', array(
 					'cfm_url'   => CFMH_API_URL,
 					'xfNr5Wsp' => cfm_generate_random_string() . get_transient( 'cfm_authentication_token' ) . cfm_generate_random_string(),

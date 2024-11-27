@@ -70,8 +70,8 @@ if ( ! class_exists( 'CFMH_Hosting_Admin' ) ) :
 				wp_register_style( 'cfmsync-font-awesome', CFMH_URL . 'vendor/fontawesome-pro/css/all.min.css', array(), '6.4.0', 'all' );
 
 				// cfm.
-				wp_enqueue_script( 'cfmsync-functions', CFMH_URL . 'assets/js/dist/functions-min.js', array(), CFMH_VERSION, true );
-				wp_register_script( 'cfmsync', CFMH_URL . 'assets/js/dist/admin-min.js', array(), CFMH_VERSION, true );
+				wp_enqueue_script( 'cfmsync-functions', CFMH_URL . 'captivate-sync-assets/js/dist/functions-min.js', array(), CFMH_VERSION, true );
+				wp_register_script( 'cfmsync', CFMH_URL . 'captivate-sync-assets/js/dist/admin-min.js', array(), CFMH_VERSION, true );
 
 				wp_localize_script(
 					'cfmsync',
@@ -92,7 +92,7 @@ if ( ! class_exists( 'CFMH_Hosting_Admin' ) ) :
 				wp_enqueue_script( 'clipboard' );
 				wp_enqueue_script( 'bootstrap-js', CFMH_URL . 'vendor/bootstrap/js/bootstrap.bundle.min.js', array(), '5.3.3', true );
 
-				wp_register_style( 'cfmsync', CFMH_URL . 'assets/css/dist/admin-min.css', array(), CFMH_VERSION, 'all' );
+				wp_register_style( 'cfmsync', CFMH_URL . 'captivate-sync-assets/css/dist/admin-min.css', array(), CFMH_VERSION, 'all' );
 
 				// cfm.
 				wp_enqueue_script( 'cfmsync' );
@@ -109,9 +109,9 @@ if ( ! class_exists( 'CFMH_Hosting_Admin' ) ) :
 			if ( in_array( $current_screen->id, $data_tables ) || ( strpos( $current_screen->id, 'captivate-sync_page_cfm-hosting-podcast-episodes_' ) === 0 ) ) :
 
 				wp_enqueue_style( 'cfm-data-tables', CFMH_URL . 'vendor/datatables/jquery.dataTables.min.css', array(), '1.10.19' );
-				wp_enqueue_style( 'cfm-data-tables-style', CFMH_URL . 'assets/css/dist/data-tables-min.css', array(), '1.10.19' );
+				wp_enqueue_style( 'cfm-data-tables-style', CFMH_URL . 'captivate-sync-assets/css/dist/data-tables-min.css', array(), '1.10.19' );
 				wp_enqueue_script( 'cfm-data-tables', CFMH_URL . 'vendor/datatables/jquery.dataTables.min.js', array(), '1.10.19', true );
-				wp_enqueue_script( 'cfm-data-tables-js', CFMH_URL . 'assets/js/dist/data-tables-min.js', array(), '1.10.19', true );
+				wp_enqueue_script( 'cfm-data-tables-js', CFMH_URL . 'captivate-sync-assets/js/dist/data-tables-min.js', array(), '1.10.19', true );
 
 			endif;
 		}
@@ -147,7 +147,7 @@ if ( ! class_exists( 'CFMH_Hosting_Admin' ) ) :
 			$main_menu_sub  = ! empty( $shows ) ? 'publish_episode' : 'my_podcasts';
 
 			if ( current_user_can( 'manage_options' ) || ( ! current_user_can( 'manage_options' ) && cfm_is_user_has_show() ) ) {
-				add_menu_page( 'Captivate Sync&trade;', 'Captivate Sync&trade;', 'edit_posts', $main_menu_slug, array( 'CFMH_Hosting_Admin', $main_menu_sub ), CFMH_URL . 'assets/img/menu-icon.png' );
+				add_menu_page( 'Captivate Sync&trade;', 'Captivate Sync&trade;', 'edit_posts', $main_menu_slug, array( 'CFMH_Hosting_Admin', $main_menu_sub ), CFMH_URL . 'captivate-sync-assets/img/menu-icon.png' );
 			}
 
 			if ( true === cfm_user_authentication() ) {

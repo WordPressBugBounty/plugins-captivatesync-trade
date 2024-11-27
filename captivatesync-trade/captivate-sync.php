@@ -3,7 +3,7 @@
  Plugin Name:  Captivate Sync&trade;
  Plugin URI:   https://captivate.fm/sync
  Description:  Captivate Sync&trade; is the WordPress podcasting plugin from Captivate.fm. Publish directly from your WordPress site or your Captivate podcast hosting account and stay in-sync wherever you are!
- Version:      3.0.2
+ Version:      3.0.3
  Author:       Captivate Audio Ltd
  Author URI:   https://www.captivate.fm
  **/
@@ -21,7 +21,7 @@ if ( ! defined( 'CFMH_URL' ) ) {
 }
 
 if ( ! defined( 'CFMH_VERSION' ) ) {
-	define( 'CFMH_VERSION', '3.0.2' );
+	define( 'CFMH_VERSION', '3.0.3' );
 }
 
 if ( ! defined( 'CFMH_API_URL' ) ) {

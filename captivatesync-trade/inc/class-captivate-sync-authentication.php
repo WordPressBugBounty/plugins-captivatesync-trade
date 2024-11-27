@@ -36,7 +36,7 @@ if ( ! class_exists( 'CFMH_Hosting_Authentication' ) ) :
 			);
 
 			if ( in_array( $current_screen->id, $allowed_screens ) ) :
-				wp_enqueue_script( 'cfm-authentication', CFMH_URL . 'assets/js/dist/authentication-min.js', array( 'jquery' ), CFMH_VERSION, true );
+				wp_enqueue_script( 'cfm-authentication', CFMH_URL . 'captivate-sync-assets/js/dist/authentication-min.js', array( 'jquery' ), CFMH_VERSION, true );
 			endif;
 
 		}

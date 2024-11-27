@@ -609,7 +609,7 @@ if ( ! function_exists( 'cfm_get_shows' ) ) :
 		if ( ! empty( $results ) ) {
 			foreach ( $results as $result ) {
 				$title             = cfm_get_show_info( $result->show_id, 'title' );
-				$artwork           = cfm_get_show_info( $result->show_id, 'artwork' ) ? cfm_get_show_info( $result->show_id, 'artwork' ) : CFMH_URL . 'assets/img/captivate-default.jpg';
+				$artwork           = cfm_get_show_info( $result->show_id, 'artwork' ) ? cfm_get_show_info( $result->show_id, 'artwork' ) : CFMH_URL . 'captivate-sync-assets/img/captivate-default.jpg';
 				$last_synchronised = cfm_get_show_info( $result->show_id, 'last_synchronised' );
 				$index_page        = cfm_get_show_info( $result->show_id, 'index_page' );
 				$author  		   = cfm_get_show_info( $result->show_id, 'author' );

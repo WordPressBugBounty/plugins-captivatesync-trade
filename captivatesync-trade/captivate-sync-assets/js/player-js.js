@@ -1,7 +1,7 @@
 jQuery( document ).ready( function( $ ) {
-	
+
 	var player = new CP('iframe');
-	
+
 	function timeToSeconds(str) {
 		var p = str.split(':'),
 			s = 0, m = 1;

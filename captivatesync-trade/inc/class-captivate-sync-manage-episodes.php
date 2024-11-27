@@ -36,7 +36,7 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Episodes' ) ) :
 			);
 
 			if ( in_array( $current_screen->id, $allowed_screens ) || ( strpos( $current_screen->id, 'captivate-sync_page_cfm-hosting-podcast-episodes_' ) === 0 ) ) :
-				wp_enqueue_script( 'cfm-manage-episodes', CFMH_URL . 'assets/js/dist/manage-episodes-min.js', array( 'jquery' ), CFMH_VERSION, true );
+				wp_enqueue_script( 'cfm-manage-episodes', CFMH_URL . 'captivate-sync-assets/js/dist/manage-episodes-min.js', array( 'jquery' ), CFMH_VERSION, true );
 			endif;
 
 		}

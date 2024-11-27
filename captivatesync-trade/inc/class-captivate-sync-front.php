@@ -25,16 +25,16 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 		 */
 		public static function assets() {
 
-			wp_enqueue_script( 'cfmsync-player-api', CFMH_URL . 'assets/js/dist/player-api-min.js', array(), CFMH_VERSION, true );
+			wp_enqueue_script( 'cfmsync-player-api', CFMH_URL . 'captivate-sync-assets/js/dist/player-api-min.js', array(), CFMH_VERSION, true );
 
 			if ( is_singular( 'captivate_podcast' ) ) {
-				wp_enqueue_script( 'cfmsync-player-js', CFMH_URL . 'assets/js/dist/player-js-min.js', array( 'jquery' ), CFMH_VERSION, true );
-				wp_enqueue_style( 'cfmsync-front-style', CFMH_URL . 'assets/css/dist/front-min.css' );
+				wp_enqueue_script( 'cfmsync-player-js', CFMH_URL . 'captivate-sync-assets/js/dist/player-js-min.js', array( 'jquery' ), CFMH_VERSION, true );
+				wp_enqueue_style( 'cfmsync-front-style', CFMH_URL . 'captivate-sync-assets/css/dist/front-min.css' );
 			}
 
-			wp_enqueue_style( 'cfmsync-shortcode', CFMH_URL . 'assets/css/dist/shortcode-min.css', array(), CFMH_VERSION );
+			wp_enqueue_style( 'cfmsync-shortcode', CFMH_URL . 'captivate-sync-assets/css/dist/shortcode-min.css', array(), CFMH_VERSION );
 
-			wp_register_script( 'cfmsync-shortcode-loadmore', 	CFMH_URL . 'assets/js/dist/shortcode-loadmore-min.js', array( 'jquery' ), CFMH_VERSION, true );
+			wp_register_script( 'cfmsync-shortcode-loadmore', 	CFMH_URL . 'captivate-sync-assets/js/dist/shortcode-loadmore-min.js', array( 'jquery' ), CFMH_VERSION, true );
 			wp_localize_script(
 				'cfmsync-shortcode-loadmore',
 				'cfmsync_front',

@@ -87,13 +87,13 @@
 									// set amie status.
 									switch ( $cfm_episode_amie_status ) {
 										case 'complete':
-											$cfm_episode_amie_status_icon = ' <img class="amie-icon cfmsync-tooltip" data-bs-placement="top" data-bs-html="true" src="' . esc_url( CFMH_URL ) . 'assets/img/amie-complete.svg" title="AMIE processing is done. If this episode is published, the processed file will be live.">';
+											$cfm_episode_amie_status_icon = ' <img class="amie-icon cfmsync-tooltip" data-bs-placement="top" data-bs-html="true" src="' . esc_url( CFMH_URL ) . 'captivate-sync-assets/img/amie-complete.svg" title="AMIE processing is done. If this episode is published, the processed file will be live.">';
 											break;
 										case 'processing':
-											$cfm_episode_amie_status_icon = ' <img class="amie-icon cfmsync-tooltip" data-bs-placement="top" data-bs-html="true" src="' . esc_url( CFMH_URL ) . 'assets/img/amie-processing.svg" title="AMIE processing in progress. If this episode is published, the original file will still be live.">';
+											$cfm_episode_amie_status_icon = ' <img class="amie-icon cfmsync-tooltip" data-bs-placement="top" data-bs-html="true" src="' . esc_url( CFMH_URL ) . 'captivate-sync-assets/img/amie-processing.svg" title="AMIE processing in progress. If this episode is published, the original file will still be live.">';
 											break;
 										case 'failed':
-											$cfm_episode_amie_status_icon = ' <img class="amie-icon cfmsync-tooltip" data-bs-placement="top" data-bs-html="true" src="' . esc_url( CFMH_URL ) . 'assets/img/amie-failed.svg" title="AMIE processing failed. If this episode is published, the original file will still be live.">';
+											$cfm_episode_amie_status_icon = ' <img class="amie-icon cfmsync-tooltip" data-bs-placement="top" data-bs-html="true" src="' . esc_url( CFMH_URL ) . 'captivate-sync-assets/img/amie-failed.svg" title="AMIE processing failed. If this episode is published, the original file will still be live.">';
 											break;
 										default:
 										$cfm_episode_amie_status_icon = '';

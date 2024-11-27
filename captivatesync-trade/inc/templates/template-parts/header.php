@@ -47,7 +47,7 @@ $no_art = ( ! in_array( $current_screen->id, $no_art_screens ) && strpos( $curre
 
 	<div class="cfm-page-logo">
 
-		<a target="_blank" href="<?php echo esc_url( CFMH_CAPTIVATE_URL ); ?>"><img src="<?php echo esc_url( CFMH_URL ); ?>assets/img/captivate-sync-black.svg"></a>
+		<a target="_blank" href="<?php echo esc_url( CFMH_CAPTIVATE_URL ); ?>"><img src="<?php echo esc_url( CFMH_URL ); ?>captivate-sync-assets/img/captivate-sync-black.svg"></a>
 
 	</div>
 

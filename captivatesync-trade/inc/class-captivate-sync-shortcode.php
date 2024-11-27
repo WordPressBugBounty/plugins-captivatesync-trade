@@ -27,7 +27,7 @@ class CFM_Hosting_Shortcode {
 			wp_enqueue_style( 'wp-color-picker' );
 			wp_enqueue_script( 'wp-color-picker');
 
-			wp_enqueue_script( 'cfmsync-generate-shortcode', CFMH_URL . 'assets/js/dist/generate-shortcode-min.js', array(), CFMH_VERSION, true );
+			wp_enqueue_script( 'cfmsync-generate-shortcode', CFMH_URL . 'captivate-sync-assets/js/dist/generate-shortcode-min.js', array(), CFMH_VERSION, true );
 
 		endif;
 	}
