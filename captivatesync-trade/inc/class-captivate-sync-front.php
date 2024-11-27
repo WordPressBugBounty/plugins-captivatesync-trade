@@ -174,16 +174,16 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 				}
 			}
 		}
-		public static function deactivate_episodes_robots( $robots ) {
+		public static function deactivate_episodes_robots($robots) {
 
 			$ids_array = array_unique( array_merge(
 				cfm_get_inactive_episodes(),
 				cfm_get_private_episodes(),
-				cfm_get_episode_ids_by_status( array( 'Expired' ) ),
-				cfm_get_episode_ids_by_type( array( 'exclusive', 'early' ) )
+				cfm_get_episode_ids_by_status(array('Expired')),
+				cfm_get_episode_ids_by_type(array('exclusive', 'early'))
 			) );
 
-			if ( is_single( $ids_array ) ) {
+			if ( is_singular('captivate_podcast') && in_array(get_the_ID(), $ids_array) ) {
 				$robots['noindex']  = true;
 				$robots['nofollow'] = true;
 			}
@@ -243,20 +243,22 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 		 *
 		 * @since 3.0
 		 */
-		public static function title_filter( $title, $post_id ) {
+		public static function title_filter( $title ) {
 
-			if ( ! is_admin() && 'captivate_podcast' == get_post_type( $post_id ) ) {
+			global $post;
+
+			if ( ! is_admin() && isset( $post ) && 'captivate_podcast' == get_post_type( $post->ID ) ) {
 
 				$cfm_general_settings = get_option( 'cfm_general_settings' );
 				$season_episode_number_enable = isset( $cfm_general_settings['season_episode_number_enable'] ) ? $cfm_general_settings['season_episode_number_enable'] : '';
 
 				// per show.
-				$cfm_show_id = get_post_meta( $post_id, 'cfm_show_id', true );
+				$cfm_show_id = get_post_meta( $post->ID, 'cfm_show_id', true );
 				$show_se_number_enable = cfm_get_show_info( $cfm_show_id, 'season_episode_number_enable' );
 
 				// output.
 				if ( '1' == $show_se_number_enable || ( ( '1' != $show_se_number_enable && '0' != $show_se_number_enable ) && '1' == $season_episode_number_enable ) ) {
-					$title = cfm_get_se_num_format( $post_id ) . $title;
+					$title = cfm_get_se_num_format( $post->ID ) . $title;
 				}
 			}
 
@@ -438,7 +440,7 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 		/**
 		 * Use artwork as featured image
 		 *
-		 * @since 1.0
+		 * @since 3.0
 		 * @param string $content  Contents.
 		 * @return string
 		 */
@@ -600,8 +602,6 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 				/**
 				 * Filters the old slug redirect post ID.
 				 *
-				 * @since 4.9.3
-				 *
 				 * @param int $id The redirect post ID.
 				 */
 				$id = apply_filters( 'old_slug_redirect_post_id', $id );
@@ -626,8 +626,6 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 
 					/**
 					 * Filters the old slug redirect URL.
-					 *
-					 * @since 4.4.0
 					 *
 					 * @param string $link The redirect URL.
 					 */
@@ -666,6 +664,127 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 				}
 
 			}
+		}
+
+		/**
+		 * Display ACF fields
+		 *
+		 * @since 3.0.1
+		 * @param string $content  Contents.
+		 * @return string
+		 */
+		public static function acf_fields_on_content($content) {
+
+			if ( class_exists('ACF') && is_singular('captivate_podcast') ) {
+
+				$output    = '';
+				$acf_output = '';
+				$post_id   = get_the_ID();
+				$post_type = get_post_type($post_id);
+				$acf_option_field_value = get_post_meta($post_id, 'acf_option_field_value', true);
+				$acf_option_field_label = get_post_meta( $post_id, 'acf_option_field_label', true );
+				$acf_option_field_group_label = get_post_meta( $post_id, 'acf_option_field_group_label', true );
+				$field_groups = acf_get_field_groups(array('post_type' => $post_type));
+
+				if ( ! empty($field_groups) && in_array($acf_option_field_value, array('above', 'below') ) ) {
+
+					$acf_output .= '<div class="cfm-acf-container cfm-acf-' . esc_attr($acf_option_field_value) . '-content">';
+					foreach ( $field_groups as $field_group ) {
+						$fields = acf_get_fields($field_group);
+
+						if ( $fields ) {
+							$acf_output .= '<div class="cfm-acf-field-group">';
+
+								if ( $acf_option_field_group_label == 'yes' ) {
+									$acf_output .= '<div class="cfm-acf-field-group-name">' . esc_html($field_group['title']) . '</div>';
+								}
+
+								foreach ($fields as $field) {
+
+									$field_name = CFMH_ACF_FIELD_PREFIX . $field['key'];
+									$field_value = get_field($field_name, $post_id);
+									$field_object = get_field_object($field['key'], $post_id);
+
+									if ( ! empty($field_value) ) {
+
+										if ( in_array( $field['type'], CFMH_ACF_FIELDS_ALLOWED ) ) {
+
+											$acf_output .= '<div class="cfm-acf-field ' . $field_name . '">';
+
+											if ( $acf_option_field_label == 'yes' ) {
+												$acf_output .= '<div class="cfm-acf-field-label">' . esc_html($field['label']) . '</div>';
+											}
+
+											switch ( $field['type'] ) {
+												case 'text':
+													$acf_output .= '<div class="cfm-acf-field-value">' . esc_html($field_value) . '</div>';
+													break;
+												case 'email':
+													$acf_output .= '<div class="cfm-acf-field-value"><a href="mailto:' . esc_attr($field_value) . '">' . esc_html($field_value) . '</a></div>';
+													break;
+												case 'textarea':
+													$textarea = $field_object['new_lines'] == 'br' ? nl2br($field_value) : ($field_object['new_lines'] == 'wpautop' ? wpautop($field_value) : esc_textarea($field_value));
+													$acf_output .= '<div class="cfm-acf-field-value">' . wp_kses_post($textarea) . '</div>';
+													break;
+												case 'select':
+													if ( isset($field_object['choices']) ) {
+														$selected_label = isset($field_object['choices'][$field_value]) ? $field_object['choices'][$field_value] : 'No choice selected';
+														$acf_output .= '<div class="cfm-acf-field-value">' . esc_html($selected_label) . '</div>';
+													}
+													break;
+												case 'wysiwyg':
+													$acf_output .= '<div class="cfm-acf-field-value">' . wp_kses_post(wpautop($field_value)) . '</div>';
+													break;
+												case 'url':
+													$acf_output .= '<div class="cfm-acf-field-value"><a href="' . esc_url($field_value) . '" target="_blank">' . esc_html($field_value) . '</a></div>';
+													break;
+												case 'oembed':
+													$oembed   = new WP_oEmbed();
+													$provider = $oembed->get_provider( $field_value, [ 'discover' => false ] );
+
+													if ( false !== $provider ) {
+														$acf_output .= '<div class="cfm-acf-field-value">' . wp_oembed_get($field_value) . '</div>';
+													}
+													else {
+														$acf_output .= '<div class="cfm-acf-field-value"><a href="' . esc_url($field_value) . '" target="_blank">' . esc_html($field_value) . '</a></div>';
+													}
+													break;
+												default:
+													$acf_output .= '<div class="cfm-acf-field-value">' . esc_html($field_value) . '</div>';
+													break;
+											}
+
+											$acf_output .= '</div>';
+
+										}
+
+									}
+								}
+
+							$acf_output .= '</div>';
+						}
+					}
+					$acf_output .= '</div>';
+
+				}
+
+				if ( 'above' == $acf_option_field_value ) {
+					$output .= $acf_output;
+					$output .= $content;
+				} else if ( 'below' == $acf_option_field_value ) {
+					$output .= $content;
+					$output .= $acf_output;
+				}
+				else {
+					$output .= $content;
+				}
+
+				return $output;
+			}
+			else {
+				return $content;
+			}
+
 		}
 
 	}

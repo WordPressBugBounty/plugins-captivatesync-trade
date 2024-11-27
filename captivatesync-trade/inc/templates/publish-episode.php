@@ -90,8 +90,14 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 	$episode_duplicate = get_post_meta( $post_id, 'cfm_episode_duplicate', true );
 	$show_timezone = cfm_get_show_info( $show_id, 'time_zone' );
 	$episode_status = get_post_meta( $post_id, 'cfm_episode_status', true );
+	$episode_website_active = get_post_meta( $post_id, 'cfm_episode_website_active', true );
+
 
 	$exclusivity_date = get_post_meta( $post_id, 'cfm_episode_exclusivity_date', true );
+
+	$acf_option_field_value = get_post_meta( $post_id, 'acf_option_field_value', true );
+	$acf_option_field_label = get_post_meta( $post_id, 'acf_option_field_label', true );
+	$acf_option_field_group_label = get_post_meta( $post_id, 'acf_option_field_group_label', true );
 	?>
 
 	<?php require CFMH . 'inc/templates/template-parts/header.php'; ?>
@@ -148,6 +154,9 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 
 			if ( $is_edit && ! $cfm_episode_id && '1' == $episode_duplicate ) {
 				echo '<div class="cfm-alert cfm-alert-warning mb-4"><span class="alert-icon"></span> <span class="alert-text">This episode has not been published on Captivate yet. Please update and sync it accordingly.</span></div>';}
+
+			if ( $is_edit && '0' == $episode_website_active ) {
+				echo '<div class="cfm-alert cfm-alert-warning mb-4"><span class="alert-icon"></span> <span class="alert-text">This episode is marked as inactive and will not appear on the website or in search results until it is reactivated.</span></div>';}
 			?>
 
 			<div class="row">
@@ -786,6 +795,83 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 
 							<small>Custom content for your website shown at the bottom of your episode show notes.</small>
 						</div>
+					<?php endif; ?>
+
+					<?php
+					if ( CFMH_Hosting_Publish_Episode::render_acf_field_groups('captivate_podcast', 'exists') ) :
+						?>
+						<div class="cfm-field cfm-website-acf mt-4">
+							<a id="acf-fields" data-bs-toggle="modal" data-bs-target="#acf-modal" href="#" class="text-decoration-none"><i class="fal fa-cogs me-2"></i>Advanced Custom Fields</a>
+						</div>
+
+						<!-- ACF Modal -->
+						<div class="modal fade modal-slideout" id="acf-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true">
+							<div class="modal-dialog modal-dialog-slideout" role="document">
+								<div class="modal-content">
+									<div class="offcanvas-header flex-column align-items-end mb-4">
+										<button type="button" id="close-acf" aria-label="Close" data-bs-dismiss="modal" class="close-btn"> Close <i class="fas fa-arrow-right"></i></button>
+									</div>
+
+									<div class="modal-header">
+										<h4 class="modal-title">Advanced Custom Fields</h4>
+										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+									</div>
+									<div class="modal-body modal-body-acf">
+
+										<div class="cfm-acf-options mb-2">
+											<div class="row cfm-modal-field">
+												<div class="col-sm-6 mb-2 mb-sm-0">
+													<label class="mb-0 me-4">Display ACF field value?</label>
+												</div>
+												<div class="col-sm-6">
+													<select name="acf_option_field_value">
+														<option value="no" <?php selected($acf_option_field_value, 'no'); ?>>No</option>
+														<option value="above" <?php selected($acf_option_field_value, 'above'); ?>>Above Content</option>
+														<option value="below" <?php selected($acf_option_field_value, 'below'); ?>>Below Content</option>
+													</select>
+												</div>
+											</div>
+										</div>
+										<div class="cfm-acf-options mb-2">
+											<div class="row cfm-modal-field">
+												<div class="col-sm-6 mb-2 mb-sm-0">
+													<label class="mb-0 me-4">Display ACF field label?</label>
+												</div>
+												<div class="col-sm-6">
+													<select name="acf_option_field_label">
+														<option value="yes" <?php selected($acf_option_field_label, 'yes'); ?>>Yes</option>
+														<option value="no" <?php selected($acf_option_field_label, 'no'); ?>>No</option>
+													</select>
+												</div>
+											</div>
+										</div>
+										<div class="cfm-acf-options mb-4">
+											<div class="row cfm-modal-field">
+												<div class="col-sm-6 mb-2 mb-sm-0">
+													<label class="mb-0 me-4">Display ACF field group label?</label>
+												</div>
+												<div class="col-sm-6">
+													<select name="acf_option_field_group_label">
+														<option value="yes" <?php selected($acf_option_field_group_label, 'yes'); ?>>Yes</option>
+														<option value="no" <?php selected($acf_option_field_group_label, 'no'); ?>>No</option>
+													</select>
+												</div>
+											</div>
+										</div>
+
+										<div class="cfm-field-groups modal-field-groups-wrap">
+											<?php CFMH_Hosting_Publish_Episode::render_acf_field_groups('captivate_podcast', 'field_groups', $post_id); ?>
+											<input type="hidden" name="acf_nonce" value="<?php echo wp_create_nonce('acf_save_nonce'); ?>" />
+										</div>
+
+									</div>
+									<div class="modal-footer">
+										<button type="button" id="close-acf" class="btn btn-outline-primary me-auto" data-bs-dismiss="modal">Close</button>
+									</div>
+								</div>
+							</div>
+						</div>
+						<!-- /ACF Modal -->
 					<?php endif; ?>
 
 				</div>

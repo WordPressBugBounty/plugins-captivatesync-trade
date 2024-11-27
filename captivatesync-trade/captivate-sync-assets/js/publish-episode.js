@@ -443,6 +443,7 @@ jQuery( document ).ready(function($) {
 
 	var clicked_button = null;
 	$(document).on('submit', '#cfm-form-publish-episode', function(e) {
+
 		var $this = $('#' + clicked_button),
 			$this_html = $this.html();
 
@@ -523,6 +524,15 @@ jQuery( document ).ready(function($) {
 			}
 			errors += 1;
 			error_feedback += '<br>Episode Artwork: Follow the artwork specifications, remove and reupload.<br>';
+		}
+
+		if ( ! $(this).validateACF() ) {
+			$('#acf-fields').addClass('is-invalid');
+			if ( ! $( '#acf-fields-error' ).length ) {
+				$('.cfm-website-acf').append('<div id="acf-fields-error" class="invalid-feedback">There is an issue with some of your ACF fields.</div>');
+			}
+			errors += 1;
+			error_feedback += '<br>ACF: There is an issue with some of your fields.<br>';
 		}
 
 		if ( errors > 0 ) {
@@ -911,6 +921,152 @@ jQuery( document ).ready(function($) {
 
 		e.preventDefault();
     });
+
+	$('#acf-modal').on('hide.bs.modal', function (e) {
+		if(!$(this).validateACF()) {
+			e.preventDefault();
+		}
+		else {
+			$('#acf-fields').removeClass('is-invalid');
+			$('.cfm-website-acf').find('.acf-fields-error').remove();
+		}
+	});
+
+	/**
+	 * Validate ACF fields
+	 */
+	$.fn.validateACF = function() {
+		var errors = 0;
+
+		$('.modal-field-groups-wrap .acf-field').each(function() {
+			var field_value = '';
+			var is_required = $(this).hasClass('required');
+
+			// For wysiwyg - switch to HTML for the textarea to update to get the latest value
+			$(this).find('.switch-html').click();
+
+			if ($(this).find('input[type="text"], input[type="number"], input[type="range"], input[type="email"], input[type="url"]').length) {
+				field_value = $(this).find('input').val();
+			} else if ($(this).find('textarea').length) {
+				field_value = $(this).find('textarea').val();
+			} else if ($(this).find('select').length) {
+				field_value = $(this).find('select').val();
+			} else if ($(this).find('input[type="radio"]:checked').length) {
+				field_value = $(this).find('input[type="radio"]:checked').val();
+			} else if ($(this).find('.acf-wysiwyg-container').length) {
+				field_value = tinymce.get($(this).find('.wp-editor-area')).getContent();
+			}
+
+			// For wysiwyg - revert to TMCE
+			$(this).find('.switch-tmce').click();
+
+			// Check if the field is required and if the value is empty
+			if (is_required && !field_value) {
+				$(this).addClass('is-invalid');
+				errors += 1;
+				if ( ! $(this).find( '.acf-field-feedback' ).length ) {
+					$(this).append('<div class="acf-field-feedback invalid-feedback">This field is required.</div>');
+				}
+			} else if ($(this).find('input, textarea').attr('maxlength')) {
+				var maxlength = parseInt($(this).find('input, textarea').attr('maxlength'));
+				if (field_value.length > maxlength) {
+					$(this).addClass('is-invalid');
+					errors += 1;
+					if (!$(this).find('.acf-field-feedback').length) {
+						$(this).append('<div class="acf-field-feedback invalid-feedback">This field cannot exceed ' + maxlength + ' characters.</div>');
+					}
+				} else {
+					$(this).removeClass('is-invalid');
+					$(this).find('.acf-field-feedback').remove();
+				}
+			} else {
+				$(this).removeClass('is-invalid');
+				$(this).find('.acf-field-feedback').remove();
+			}
+
+			// validate email.
+			if ( $(this).hasClass('acf-field-type-email') && (is_required || field_value) ) {
+				if ( !cfm_validate_email(field_value) ) {
+					$(this).addClass('is-invalid');
+					errors += 1;
+					if ( ! $(this).find('.acf-field-feedback').length ) {
+						$(this).append('<div class="acf-field-feedback invalid-feedback">Please enter a valid email address.</div>');
+					}
+					else {
+						$(this).find('.acf-field-feedback').html('Please enter a valid email address.');
+					}
+				}
+				else {
+					$(this).removeClass('is-invalid');
+					$(this).find('.acf-field-feedback').remove();
+				}
+			}
+
+			// Validate number and range steps.
+			if ( $(this).hasClass('acf-field-type-number') && (is_required || field_value) ) {
+
+				var $input = $(this).find('input');
+				var min = parseFloat($input.attr('min'));
+				var max = parseFloat($input.attr('max'));
+				var step = parseFloat($input.attr('step'));
+
+				// Validate if the value is within the min and max range
+				if (field_value < min) {
+					errors += 1;
+					$(this).addClass('is-invalid');
+					if ( ! $(this).find('.acf-field-feedback').length ) {
+						$(this).append('<div class="acf-field-feedback invalid-feedback">The value must be greater than or equal to ' + min + '.</div>');
+					}
+				} else if (field_value > max) {
+					errors += 1;
+					$(this).addClass('is-invalid');
+					if ( ! $(this).find('.acf-field-feedback').length ) {
+						$(this).append('<div class="acf-field-feedback invalid-feedback">The value must be less than or equal to ' + max + '.</div>');
+					}
+				}
+				else if ( !isNaN(step) && step > 0 && field_value % step !== 0 ) {
+					errors += 1;
+					$(this).addClass('is-invalid');
+					if (!$(this).find('.acf-field-feedback').length) {
+						$(this).append('<div class="acf-field-feedback invalid-feedback">The value must be a multiple of ' + step + '.</div>');
+					}
+				} else {
+					$(this).removeClass('is-invalid');
+					$(this).find('.acf-field-feedback').remove();
+				}
+			}
+
+			// validate URL and oEmbed.
+			if ( ($(this).hasClass('acf-field-type-url') || $(this).hasClass('acf-field-type-oembed') ) && (is_required || field_value) ) {
+
+				if ( !cfm_validate_url(field_value) ) {
+					$(this).addClass('is-invalid');
+					errors += 1;
+					if ( ! $(this).find('.acf-field-feedback').length ) {
+						$(this).append('<div class="acf-field-feedback invalid-feedback">Please enter a valid URL.</div>');
+					}
+					else {
+						$(this).find('.acf-field-feedback').html('Please enter a valid URL.');
+					}
+				}
+				else {
+					$(this).removeClass('is-invalid');
+					$(this).find('.acf-field-feedback').remove();
+				}
+			}
+
+		});
+
+		if (errors > 0) {
+			$('.modal-body-acf').animate({
+				scrollTop: $('.is-invalid').first().offset().top - $('.modal-body-acf').offset().top + $('.modal-body-acf').scrollTop() - 100  // Adjust by the current scroll position
+			}, 500);
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
 
 	/**
 	 * Variable confirmation modal

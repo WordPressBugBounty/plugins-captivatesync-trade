@@ -13885,6 +13885,38 @@ textarea.form-control-lg {
   height: 10px;
   border-radius: 3px;
 }
+#wpbody-content .wrap .modal-body-acf {
+  max-height: 75%;
+}
+#wpbody-content .wrap .cfm-field-groups .acf-field-group-name {
+  font-weight: 700;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+#wpbody-content .wrap .cfm-field-groups .acf-field-group {
+  margin-bottom: 20px;
+}
+#wpbody-content .wrap .cfm-field-groups .acf-field-group .acf-field {
+  margin-bottom: 15px;
+}
+#wpbody-content .wrap .cfm-field-groups .acf-field-group .acf-field > label {
+  display: block;
+  margin: 0 0 5px;
+}
+#wpbody-content .wrap .cfm-field-groups .acf-field-group .acf-field > label span {
+  color: #f15a24;
+}
+#wpbody-content .wrap .cfm-field-groups .acf-field-group .acf-field > input:not([type=checkbox]):not([type=range]),
+#wpbody-content .wrap .cfm-field-groups .acf-field-group .acf-field > textarea {
+  width: 100%;
+}
+#wpbody-content .wrap .cfm-field-groups .acf-field-group .acf-field .acf-field-instructions {
+  font-size: 14px;
+  margin-top: 5px;
+}
+#wpbody-content .wrap .cfm-field-groups .acf-field-group .acf-field .invalid-feedback {
+  display: block;
+}
 #wpbody-content .wrap .cfm-alert {
   position: relative;
   margin-bottom: 10px;

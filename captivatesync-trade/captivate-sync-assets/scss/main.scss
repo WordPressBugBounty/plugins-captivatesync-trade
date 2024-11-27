@@ -446,6 +446,47 @@
         }
     }
 
+    // ACF fields
+    .modal-body-acf {
+        max-height: 75%;
+    }
+    .cfm-field-groups {
+
+        .acf-field-group-name {
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .acf-field-group {
+            margin-bottom: 20px;
+
+            .acf-field {
+                margin-bottom: 15px;
+
+                > label {
+                    display: block;
+                    margin: 0 0 5px;
+                    span {
+                        color: #f15a24;
+                    }
+                }
+                > input:not([type="checkbox"]):not([type="range"]),
+                > textarea {
+                    width: 100%;
+                }
+                .acf-field-instructions {
+                    font-size: 14px;
+                    margin-top: 5px;
+                }
+
+                .invalid-feedback {
+                    display: block;
+                }
+            }
+        }
+    }
+
     // Alerts
     .cfm-alert {
         position: relative;

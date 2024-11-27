@@ -3,7 +3,7 @@
  Plugin Name:  Captivate Sync&trade;
  Plugin URI:   https://captivate.fm/sync
  Description:  Captivate Sync&trade; is the WordPress podcasting plugin from Captivate.fm. Publish directly from your WordPress site or your Captivate podcast hosting account and stay in-sync wherever you are!
- Version:      3.0.0
+ Version:      3.0.2
  Author:       Captivate Audio Ltd
  Author URI:   https://www.captivate.fm
  **/
@@ -21,7 +21,7 @@ if ( ! defined( 'CFMH_URL' ) ) {
 }
 
 if ( ! defined( 'CFMH_VERSION' ) ) {
-	define( 'CFMH_VERSION', '3.0.0' );
+	define( 'CFMH_VERSION', '3.0.2' );
 }
 
 if ( ! defined( 'CFMH_API_URL' ) ) {
@@ -42,6 +42,14 @@ if ( ! defined( 'CFMH_MSP_INTERVAL' ) ) {
 
 if ( ! defined( 'CFMH_WP_ERROR' ) ) {
 	define( 'CFMH_WP_ERROR', 'wp_error' );
+}
+
+if ( ! defined( 'CFMH_ACF_FIELD_PREFIX' ) ) {
+	define( 'CFMH_ACF_FIELD_PREFIX', 'cfm_acf_' );
+}
+
+if ( ! defined( 'CFMH_ACF_FIELDS_ALLOWED' ) ) {
+	define( 'CFMH_ACF_FIELDS_ALLOWED', ['text', 'textarea', 'select', 'radio', 'wysiwyg', 'number', 'range', 'email', 'url', 'oembed'] );
 }
 
 // Check if CFM_Hosting class already exists.
@@ -237,7 +245,7 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 			// captivate_podcast rewrite slug.
 			add_filter( 'register_post_type_args', array( 'CFMH_Hosting_Front', 'register_post_type_args' ), 10, 2 );
 
-			add_filter( 'the_title', array( 'CFMH_Hosting_Front', 'title_filter' ), 10, 2 );
+			add_filter( 'the_title', array( 'CFMH_Hosting_Front', 'title_filter' ), 10, 1 );
 
 			// add player to episodes.
 			add_filter( 'the_excerpt', array( 'CFMH_Hosting_Front', 'content_filter' ), 11 );
@@ -286,6 +294,9 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 			// Get new episodes from captivate and insert to WP
 			add_action( 'cfm_sync_new_episodes', array( $this, 'get_new_episodes' ) );
 
+			// ACF
+			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'acf_fields_on_content' ), 11 );
+
 			if ( is_admin() ) :
 
 				// restrictions.
@@ -328,6 +339,7 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 				add_action( 'wp_ajax_add-webtags', array( 'CFMH_Hosting_Publish_Episode', 'add_webtags' ) );
 
 				add_action( 'wp_ajax_duplicate-episode', array( 'CFMH_Hosting_Publish_Episode', 'duplicate_episode' ) );
+				add_action( 'wp_ajax_save-acf-fields', array( 'CFMH_Hosting_Publish_Episode', 'save_acf_fields' ) );
 
 				add_action( 'wp_ajax_change-shownotes-template', array( 'CFMH_Hosting_Publish_Episode', 'change_shownotes_template' ) );
 				add_action( 'wp_ajax_insert-static-block', array( 'CFMH_Hosting_Publish_Episode', 'insert_static_block' ) );
@@ -471,7 +483,7 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 					foreach ( $current_shows as $show_id ) {
 						cfm_sync_shows( $show_id );
 						cfm_sync_plugin_version( $show_id );
-						//cfm_sync_episodes( $show_id, array( 'update' ), array( 'all' ) );
+						cfm_sync_episodes( $show_id, array( 'all' ), array( 'all' ) );
 					}
 				}
 			}

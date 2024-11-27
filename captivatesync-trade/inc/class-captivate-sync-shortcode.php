@@ -125,7 +125,7 @@ class CFM_Hosting_Shortcode {
 
 			$episodes = new WP_Query( $get_episodes );
 
-			if ( $episodes->have_posts() && ( true === cfm_user_authentication() ) ) :
+			if ( $episodes->have_posts() ) :
 
 				$cfm_general_settings = get_option( 'cfm_general_settings' );
 				$season_episode_number_enable = isset( $cfm_general_settings['season_episode_number_enable'] ) ? $cfm_general_settings['season_episode_number_enable'] : '';
@@ -342,7 +342,7 @@ class CFM_Hosting_Shortcode {
 
 				$episodes = new WP_Query( $get_episodes );
 
-				if ( $episodes->have_posts() && ( true === cfm_user_authentication() ) ) {
+				if ( $episodes->have_posts() ) {
 
 					$cfm_general_settings = get_option( 'cfm_general_settings' );
 					$season_episode_number_enable = isset( $cfm_general_settings['season_episode_number_enable'] ) ? $cfm_general_settings['season_episode_number_enable'] : '';

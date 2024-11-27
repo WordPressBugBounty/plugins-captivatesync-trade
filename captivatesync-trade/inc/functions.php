@@ -2511,13 +2511,20 @@ add_filter( 'post_type_link', function ( $post_link, $post, $leavename, $sample 
  */
 add_filter('wp_kses_allowed_html', 'cfm_kses_allowed_tags');
 function cfm_kses_allowed_tags( $allowed_tags ) {
-    $allowed_tags['dt-variable'] = array(
-        'data-dt-name' => true,
-        'data-conditional-depth' => true,
-    );
-	$allowed_tags['span'] = array(
-        'contenteditable' => true,
-    );
+
+	if (
+        ( is_admin() && isset($_GET['page']) && ( $_GET['page'] === 'cfm-hosting-publish-episode' || $_GET['page'] === 'cfm-hosting-edit-episode' ) && isset($_GET['show_id']) )
+        ||
+        ( !is_admin() && ( is_post_type_archive('captivate_podcast') || is_singular('captivate_podcast') || is_tax('captivate_podcast') ) )
+    ) {
+        $allowed_tags['dt-variable'] = array(
+            'data-dt-name' => true,
+            'data-conditional-depth' => true,
+        );
+        $allowed_tags['span'] = array(
+            'contenteditable' => true,
+        );
+    }
 
     return $allowed_tags;
 }
@@ -2636,6 +2643,7 @@ if ( ! function_exists( 'cfm_get_published_episodes' ) ) :
 				)
 			),
 			'fields' => 'ids',
+			'posts_per_page' => -1
 		);
 
 		$query = new WP_Query($args);

@@ -9,8 +9,8 @@
 Contributors: Kieran McKeefery, Mark Asquith, Captivate Audio Ltd
 Tags: podcast, podcasting, podcaster, itunes, captivate, CaptivateFM, powerpress, blubrry, Buzzsprout, Libsyn
 Requires at least: 5.7.0
-Tested up to: 6.5.2
-Stable tag: 3.0.0</p>
+Tested up to: 6.7
+Stable tag: 3.0.2</p>
 
 <p>Captivate Sync™ is a WordPress plugin maintained and developed by Captivate, part of the Rebel Base Media family. With our background in Podcast Websites, WordPress development and podcast hosting, hundreds of independent podcasters trust Captivate Sync™ and Captivate to power their podcast brands everyday.</p>
 
@@ -127,6 +127,23 @@ Captivate Sync™ is our dedicated free plugin for self-hosted WordPress podcast
 </ol>
 
 <p>== Changelog ==</p>
+
+<p>= 3.0.2 =</p>
+<ul>
+	<li>Released on 27/11/2024</li>
+	<li>Bug fix: Resolved an issue where auto-sync was not triggered when a webhook failed.</li>
+	<li>Bug fix: Fixed a problem with the shortcode not displaying the episode list when authentication tokens expired.</li>
+</ul>
+
+<p>= 3.0.1 =</p>
+<ul>
+	<li>Released on 20/11/2024</li>
+	<li>Added support for ACF fields, including ['text', 'textarea', 'select', 'radio', 'wysiwyg', 'number', 'range', 'email', 'url', 'oembed'].</li>
+	<li>Bug fix: Resolved an issue with the "noindex" implementation for private, exclusive, early access, expired, and disabled episodes, ensuring proper exclusion from search engine indexing.</li>
+	<li>Bug fix: Addressed a conflict with the Divi theme when using the 'the_title' filter, which affected default posts in certain cases.</li>
+	<li>Bug fix: Fixed a conflict with the LearnDash plugin that caused quiz results to incorrectly display 0 correct answers, even when answers were correct.</li>
+	<li>Note: Some ACF configurations, such as conditional logic, prepend, append, and others, are not currently supported but will be included in future updates along with additional field options.</li>
+</ul>
 
 <p>= 3.0.0 =</p>
 <ul>

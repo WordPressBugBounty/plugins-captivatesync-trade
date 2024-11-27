@@ -4,6 +4,7 @@
         padding: 25px;
     }
 }
+
 .ql-size-small {
     font-size: 0.75em;
 }
@@ -13,6 +14,29 @@
 .ql-size-huge {
     font-size: 2.5em;
 }
+
+.cfm-acf-container {
+    &.cfm-acf-above-content .cfm-acf-field-group {
+        padding-bottom: 20px;
+    }
+
+    &.cfm-acf-below-content .cfm-acf-field-group {
+        padding-top: 20px;
+    }
+
+    .cfm-acf-field-group-name {
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+    .cfm-acf-field {
+        margin-bottom: 10px;
+    }
+    .cfm-acf-field-label {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+}
+
 .cfm-transcript {
     .cfm-transcript-content {
         padding: 20px;

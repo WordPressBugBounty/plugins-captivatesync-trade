@@ -378,8 +378,48 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 
 						// Custom field.
 						if ( isset( $_POST['custom_field'] ) ) {
-							update_post_meta( $post_id, 'cfm_episode_custom_field', wp_unslash( $_POST['custom_field'] ) );
+							update_post_meta( $post_id, 'cfm_episode_custom_field', wp_filter_post_kses( $_POST['custom_field'] ) );
 						}
+
+						// ACF
+						if ( class_exists('ACF') ) {
+
+							if ( isset( $_POST['acf_option_field_value'] ) ) {
+								update_post_meta( $post_id, 'acf_option_field_value', sanitize_text_field( wp_unslash( $_POST['acf_option_field_value'] ) ) );
+							}
+							if ( isset( $_POST['acf_option_field_label'] ) ) {
+								update_post_meta( $post_id, 'acf_option_field_label', sanitize_text_field( wp_unslash( $_POST['acf_option_field_label'] ) ) );
+							}
+							if ( isset( $_POST['acf_option_field_group_label'] ) ) {
+								update_post_meta( $post_id, 'acf_option_field_group_label', sanitize_text_field( wp_unslash( $_POST['acf_option_field_group_label'] ) ) );
+							}
+
+							foreach ($_POST as $field_name => $field_value) {
+								if ($field_name === 'submit') continue;
+
+								if (strpos($field_name, CFMH_ACF_FIELD_PREFIX) === 0) {
+
+									$original_field_name = str_replace(CFMH_ACF_FIELD_PREFIX, '', $field_name);
+									$field_object = get_field_object($original_field_name, $post_id);
+
+									switch ($field_object['type']) {
+										case 'textarea':
+											$textarea = $field_object['new_lines'] == 'br' ? nl2br($field_value) : ($field_object['new_lines'] == 'wpautop' ? wpautop($field_value) : esc_textarea($field_value));
+											update_field($field_name, wp_filter_post_kses($textarea), $post_id);
+										case 'wysiwyg':
+											update_field($field_name, wp_filter_post_kses($field_value), $post_id);
+											break;
+										default:
+											$sanitized_value = sanitize_text_field($field_value);
+											update_field($field_name, $sanitized_value, $post_id);
+											break;
+									}
+
+								}
+							}
+
+						}
+
 
 						$episode_info['title']     		= $post_title;
 						$episode_info['shownotes'] 		= $shownotes;
@@ -930,6 +970,126 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 			echo $output;
 
 			wp_die();
+		}
+
+		/**
+		 * Render ACF field groups
+		 *
+		 * @since 3.0.1
+		 * @return string
+		 */
+		public static function render_acf_field_groups($post_type ='captivate_podcast', $return = 'field_groups', $post_id = 0) {
+
+			if ( class_exists('ACF') ) {
+				$field_groups = acf_get_field_groups(array('post_type' => $post_type));
+
+				switch ($return) {
+					case 'exists':
+						return ! empty($field_groups);
+
+					case 'field_groups':
+
+						if ( ! empty($field_groups) ) {
+
+							foreach ( $field_groups as $field_group ) {
+								$fields = acf_get_fields($field_group);
+
+								if ( $fields ) {
+									echo '<div class="acf-field-group acf-field-' . $field_group['key'] . '">';
+									echo '<div class="acf-field-group-name">' . esc_html($field_group['title']) . '</div>';
+
+									foreach ($fields as $field) {
+										$field_name = CFMH_ACF_FIELD_PREFIX . $field['key'];
+										$field_value = get_field($field_name, $post_id);
+										$default_value = isset($field['default_value']) ? $field['default_value'] : '';
+										$final_value = $field_value ?: $default_value;
+										$field_required = isset($field['required']) && $field['required'] == 1;
+										$required_class = $field_required ? ' required' : '';
+										$required_label = $field_required ? ' <span>*</span>' : '';
+										$field_label = $field['label'] ? $field['label'] : '(no label)';
+										$placeholder = isset($field['placeholder']) && $field['placeholder'] ? ' placeholder="' . $field['placeholder'] . '"' : '';
+										$maxlength = isset($field['maxlength']) && $field['maxlength'] ? ' maxlength="' . $field['maxlength'] . '"' : '';
+
+										echo '<div class="acf-field acf-field-key' . $field['key'] . ' acf-field-type-' . $field['type'] . $required_class . '">';
+
+											if ( in_array( $field['type'], CFMH_ACF_FIELDS_ALLOWED ) ) {
+												echo '<label for="' . esc_attr($field_name) . '">' . esc_html($field_label) . $required_label . '</label>';
+
+												switch ($field['type']) {
+													case 'text':
+														echo '<input type="text" name="' . esc_attr($field_name) . '" value="' . esc_attr($final_value) . '"' . $maxlength . $placeholder . ' />';
+														break;
+													case 'textarea':
+
+														$rows = $field['rows'] ? ' rows="' . $field['rows'] . '"' : '';
+														echo '<textarea name="' . esc_attr($field_name) . '" rows="' . esc_attr($field['rows']) . '" ' . $maxlength . $rows . $placeholder . '>' . esc_textarea($final_value) . '</textarea>';
+														break;
+													case 'select':
+														echo '<select name="' . esc_attr($field_name) . '">';
+														foreach ($field['choices'] as $value => $label) {
+															$selected = ($value == $field_value || $value == $final_value) ? ' selected' : '';
+															echo '<option value="' . esc_attr($value) . '"' . $selected . '>' . esc_html($label) . '</option>';
+														}
+														echo '</select>';
+														break;
+													case 'radio':
+														foreach ($field['choices'] as $value => $label) {
+															$checked = ($value == $field_value || $value == $final_value) ? ' checked' : '';
+															echo '<label><input type="radio" name="' . esc_attr($field_name) . '" value="' . esc_attr($value) . '" ' . $checked . ' /> ' . esc_html($label) . '</label>';
+														}
+														break;
+													case 'wysiwyg':
+														$media_upload = $field['media_upload'] ? true : false;
+														$toolbar = $field['toolbar'] == 'full' ? false : true;
+														$editor_settings = array(
+															'media_buttons' => $media_upload,
+															'textarea_name' => $field_name,
+															'teeny' => $toolbar,
+														);
+														echo '<div class="acf-wysiwyg-container">';
+															wp_editor($final_value, $field_name, $editor_settings);
+														echo '</div>';
+														break;
+													case 'number':
+														echo '<input type="number" name="' . esc_attr($field_name) . '" value="' . esc_attr($final_value) . '" min="' . esc_attr($field['min']) . '" max="' . esc_attr($field['max']) . '" step="' . esc_attr($field['step']) . '"' . $placeholder . ' />';
+														break;
+													case 'range':
+														echo '<input type="range" name="' . esc_attr($field_name) . '" value="' . esc_attr($final_value) . '" min="' . esc_attr($field['min']) . '" max="' . esc_attr($field['max']) . '" step="' . esc_attr($field['step']) . '" />';
+														break;
+													case 'email':
+														echo '<input type="email" name="' . esc_attr($field_name) . '" value="' . esc_attr($final_value) . '"' . $placeholder . ' />';
+														break;
+													case 'url':
+														echo '<input type="url" name="' . esc_attr($field_name) . '" value="' . esc_attr($final_value) . '"' . $placeholder . ' />';
+														break;
+													case 'oembed':
+														echo '<input type="text" name="' . esc_attr($field_name) . '" value="' . esc_attr($final_value) . '"' . $placeholder . ' />';
+														break;
+													default:
+														break;
+												}
+											}
+
+											if ( $field['instructions'] ) {
+												echo '<div class="acf-field-instructions">' . esc_html($field['instructions']) . '</div>';
+											}
+										echo '</div>';
+									}
+
+									echo '</div>';
+								}
+							}
+						}
+
+						return $field_groups;
+
+					default:
+						return [];
+				}
+			}
+			else {
+				return [];
+			}
 		}
 
 	}
