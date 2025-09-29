@@ -490,9 +490,6 @@
   height: 10px;
   border-radius: 3px;
 }
-#wpbody-content .wrap .modal-body-acf {
-  max-height: 75%;
-}
 #wpbody-content .wrap .cfm-field-groups .acf-field-group-name {
   font-weight: 700;
   margin-bottom: 10px;
@@ -778,6 +775,36 @@
   color: #647381;
   font-weight: 300;
 }
+#wpbody-content .wrap .cfm-dropzone.fake-dropzone .fd-wrap {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  max-width: 100%;
+}
+#wpbody-content .wrap .cfm-dropzone.fake-dropzone .fd-col-image {
+  width: 120px;
+  height: 120px;
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 auto;
+          flex: 0 0 auto;
+  overflow: hidden;
+}
+#wpbody-content .wrap .cfm-dropzone.fake-dropzone .fd-col-browse {
+  -webkit-box-pack: start;
+      -ms-flex-pack: start;
+          justify-content: flex-start;
+  -webkit-box-flex: 0;
+      -ms-flex: 0 0 calc(100% - 140px);
+          flex: 0 0 calc(100% - 140px);
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  margin-left: 20px;
+}
 #wpbody-content .wrap .cfm-dropzone.fake-dropzone .dropzone {
   display: -webkit-box;
   display: -ms-flexbox;
@@ -790,6 +817,7 @@
           justify-content: center;
   text-align: center;
   cursor: pointer;
+  min-height: 120px;
 }
 #wpbody-content .wrap .cfm-dropzone.fake-dropzone .fd-result {
   background: #eff3fa;
@@ -844,7 +872,7 @@
   font-size: 14px;
 }
 #wpbody-content .wrap .ql-container {
-  height: 340px !important;
+  height: 340px;
   border: 1px solid #647381;
   border-radius: 3px;
   border-top-right-radius: 0;
@@ -1057,6 +1085,28 @@
   -webkit-box-flex: 0;
       -ms-flex: none;
           flex: none;
+  max-height: 75%;
+}
+#wpbody-content .wrap .modal.modal-slideout .cfm-modal-field-group-name {
+  font-weight: 500;
+  font-size: 18px;
+}
+#wpbody-content .wrap .modal.modal-slideout .cfm-modal-field label {
+  display: block;
+}
+#wpbody-content .wrap .modal.modal-slideout .cfm-modal-field > input:not([type=checkbox]):not([type=range]),
+#wpbody-content .wrap .modal.modal-slideout .cfm-modal-field > textarea {
+  width: 100%;
+}
+#wpbody-content .wrap .modal.modal-slideout .cfm-modal-field .fd-col-image {
+  width: 80px;
+  height: 80px;
+}
+#wpbody-content .wrap .modal.modal-slideout .cfm-modal-field .dropzone {
+  min-height: 80px;
+}
+#wpbody-content .wrap .modal.modal-slideout .cfm-modal-field .dropzone .dz-default {
+  padding: 0;
 }
 #wpbody-content .wrap .modal.show {
   opacity: 1;

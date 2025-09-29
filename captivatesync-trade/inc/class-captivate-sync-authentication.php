@@ -56,12 +56,10 @@ if ( ! class_exists( 'CFMH_Hosting_Authentication' ) ) :
 		    # Check current admin page.
 		    if ( $pagenow == 'admin.php' && isset($_GET['page']) && $_GET['page'] == 'cfm-hosting-podcasts' ) {
 
-		    	if ( true !== cfm_user_authentication() ) {
-
-			        wp_redirect( admin_url( 'admin.php?page=cfm-hosting-credentials' ) );
-			        exit;
-
-			    }
+		    	if ( ! cfm_user_authentication() ) {
+					wp_redirect( admin_url( 'admin.php?page=cfm-hosting-credentials' ) );
+					exit;
+				}
 
 		    }
 
@@ -170,27 +168,13 @@ if ( ! class_exists( 'CFMH_Hosting_Authentication' ) ) :
 				if ( ! empty( $current_shows ) ) {
 
 					foreach ( $current_shows as $show_id ) {
-						$remove_shows = wp_remote_request( CFMH_API_URL . '/shows/' . $show_id . '/sync',array(
-							'timeout' => 500,
-							'method'  => 'DELETE',
-							'headers' => array(
-								'Authorization' => 'Bearer ' . get_transient( 'cfm_authentication_token' ),
-							),
-						) );
-
-						// Debugging.
-						cfm_generate_log( 'REMOVE AUTHENTICATION - REMOVE SHOWS', $remove_shows );
-
-						if ( ! is_wp_error( $remove_shows ) && 'Unauthorized' !== $remove_shows['body'] && is_array( $remove_shows ) ) {
-
-							$remove_shows = json_decode( $remove_shows['body'] );
-
-							if ( $remove_shows->success ) {
-								// success.
-							}
+						$disconnect_show = cfm_disconnect_captivate_show($show_id);
+						if ( $disconnect_show ) {
+							// success - do nothing.
 						}
 					}
 
+					// delete show info.
 					global $wpdb;
 					$table_name = $wpdb->prefix . 'cfm_shows';
 					$delete     = $wpdb->query( "TRUNCATE TABLE $table_name" );

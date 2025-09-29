@@ -266,11 +266,15 @@ jQuery( document ).ready(function($) {
 			var artwork_id = 0;
 
 			if ( artwork_id == 0 ) {
-				selection.each(
-					function(attachment) {
+				selection.each(function(attachment) {
+					var mimeType = attachment.attributes.mime;
+					var validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+					if (validImageTypes.includes(mimeType)) {
 						artwork_id = attachment['id'];
+					} else {
+						alert('Please select a valid image (JPG, PNG, GIF, or WebP).');
 					}
-				);
+				});
 			}
 
 			if ( artwork_id != 0) {
@@ -327,22 +331,20 @@ jQuery( document ).ready(function($) {
 		});
 	});
 
-	$(document).on('click', '#cfm-artwork-uploader .upload-new-image', function(e) {
-		e.preventDefault();
-		$( '#cfm-artwork-uploader .fd-replace' ).fadeOut(100, function () {
-			$('#cfm-artwork-uploader .fd-uploader' ).show();
-		});
-	});
-
-
-
 	/**
-	 * Featured image uploader
+	 * Custom image uploader
 	 */
-	$( document ).on('click', '#featured-image-dropzone', function(e) {
+	$( document ).on('click', '.fake-dropzone.cfm-image-uploader .dropzone', function(e) {
 		e.preventDefault();
 
-		$this = $(this);
+		var $this = $(this),
+			$uploader_wrap = $this.closest('.fake-dropzone'),
+			$fd_replace = $uploader_wrap.find('.fd-replace'),
+			$fd_result = $uploader_wrap.find('.fd-result'),
+			$image_id_input = $uploader_wrap.find('.fd-input-image-id'),
+			$image_url_input = $uploader_wrap.find('.fd-input-image-url');
+
+		var uploader_title = $uploader_wrap.attr('data-uploader-title');
 
 		var image_frame;
 		if ( image_frame ) {
@@ -351,7 +353,7 @@ jQuery( document ).ready(function($) {
 
 		// Define image_frame as wp.media object.
 		image_frame = wp.media({
-			title: 'Select Website Featured Image',
+			title: uploader_title,
 			multiple : false,
 			library : {
 				type : 'image',
@@ -359,60 +361,67 @@ jQuery( document ).ready(function($) {
 		});
 
 		image_frame.on('select', function() {
-			// On close, get selections and save to the hidden input.
-			// plus other AJAX stuff to refresh the image preview.
-			var selection  = image_frame.state().get( 'selection' );
-			var gallery_id = 0;
+			var selection  = image_frame.state().get( 'selection' ),
+				image_id = 0,
+				image_url = "";
 
-			if ( gallery_id == 0 ) {
-				selection.each(function(attachment) {
-					gallery_id = attachment['id'];
-				});
-			}
+			selection.each(function(attachment) {
+        		var mimeType = attachment.attributes.mime;
+				var validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+				if (validImageTypes.includes(mimeType)) {
+					image_id = attachment['id'];
+					image_url = attachment.attributes.url;
 
-			if ( gallery_id != 0) {
-
-				var media_attachment = image_frame.state().get('selection').first().toJSON();
-
-				if ( media_attachment.url ) {
-
-					$('#featured_image').val(gallery_id);
-					$('#featured_image').trigger('change');
-
-					$this.parent().hide();
-					$('#cfm-featured-image-uploader .fd-replace').fadeIn(200);
-					$('#cfm-featured-image-uploader .fd-result').html('<img src="' + media_attachment.url + '" width="200" height="200" class="img-fluid">').hide().fadeIn(650);
-
-					// LOCALSTORAGE - save featured image data.
-					if( $.inArray( cfmsync.CFMH_CURRENT_SCREEN, publish_episode_screens) !== -1) {
-						localStorage.setItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local', media_attachment.url);
-					}
-
+				} else {
+					alert('Please select a valid image (JPG, PNG, GIF, or WebP).');
 				}
+			});
+
+			if ( image_id != 0 ) {
+				$image_id_input.val(image_id);
+				$image_id_input.trigger('change');
+				$image_url_input.val(image_url);
+				$image_url_input.trigger('change');
+
+				$this.parent().hide();
+				$fd_replace.fadeIn(200);
+				$fd_result.html('<img src="' + image_url + '" width="200" height="200" class="img-fluid">').hide().fadeIn(650);
 			}
 		});
 
 		image_frame.open();
 	});
 
-	$(document).on('click', '#cfm-featured-image-uploader .remove-image', function(e) {
+	$( document ).on('click', '.fake-dropzone.cfm-image-uploader .remove-image', function(e) {
 		e.preventDefault();
-		$( '#cfm-featured-image-uploader .fd-replace' ).fadeOut(100, function () {
-			$('#cfm-featured-image-uploader .fd-uploader' ).show();
-			$('#cfm-featured-image-uploader .fd-result').html('<i class="fal fa-image"></i>');
+		var $this = $(this),
+			$uploader_wrap = $this.closest('.fake-dropzone'),
+			$fd_uploader = $uploader_wrap.find('.fd-uploader'),
+			$fd_replace = $uploader_wrap.find('.fd-replace'),
+			$fd_result = $uploader_wrap.find('.fd-result'),
+			$image_id_input = $uploader_wrap.find('.fd-input-image-id'),
+			$image_url_input = $uploader_wrap.find('.fd-input-image-url');
 
-			$('#featured_image').val('0');
-			$('#featured_image').trigger('change');
+		$fd_replace.fadeOut(100, function () {
+			$fd_uploader.show();
+			$fd_result.html('<i class="fal fa-image"></i>');
+
+			$image_id_input.val(0);
+			$image_id_input.trigger('change');
+			$image_url_input.val('');
+			$image_url_input.trigger('change');
 		});
-
-		// LOCALSTORAGE - remove featured image data.
-		localStorage.removeItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local');
 	});
 
-	$(document).on('click', '#cfm-featured-image-uploader .upload-new-image', function(e) {
+	$(document).on('click', '.fake-dropzone.cfm-image-uploader .upload-new-image', function(e) {
 		e.preventDefault();
-		$( '#cfm-featured-image-uploader .fd-replace' ).fadeOut(100, function () {
-			$('#cfm-featured-image-uploader .fd-uploader' ).show();
+		var $this = $(this),
+			$uploader_wrap = $this.closest('.fake-dropzone'),
+			$fd_uploader = $uploader_wrap.find('.fd-uploader'),
+			$fd_replace = $uploader_wrap.find('.fd-replace');
+
+		$fd_replace.fadeOut(100, function () {
+			$fd_uploader.show();
 		});
 	});
 
@@ -529,7 +538,7 @@ jQuery( document ).ready(function($) {
 		if ( ! $(this).validateACF() ) {
 			$('#acf-fields').addClass('is-invalid');
 			if ( ! $( '#acf-fields-error' ).length ) {
-				$('.cfm-website-acf').append('<div id="acf-fields-error" class="invalid-feedback">There is an issue with some of your ACF fields.</div>');
+				$( '<div id="acf-fields-error" class="invalid-feedback">There is an issue with some of your ACF fields.</div>' ).insertAfter('#acf-fields');
 			}
 			errors += 1;
 			error_feedback += '<br>ACF: There is an issue with some of your fields.<br>';
@@ -825,9 +834,11 @@ jQuery( document ).ready(function($) {
 	$(document).on('change keyup', transcript_text, function(e) {
 		if ( $(this).val() != '' ) {
 			$('.transcript-upload-box').addClass('disabled');
+			$('#update-transcript').prop('disabled', false);
 		}
 		else {
 			$('.transcript-upload-box').removeClass('disabled');
+			$('#update-transcript').prop('disabled', true);
 		}
 	});
 
@@ -836,6 +847,7 @@ jQuery( document ).ready(function($) {
 			$(transcript_text).prop('disabled', false);
 
 			$('.transcript-upload-box').html(transcript_upload_default);
+			$('#update-transcript').prop('disabled', true);
 		}
 		else {
 			var filename = $(this).val().replace(/C:\\fakepath\\/i, '');
@@ -843,6 +855,7 @@ jQuery( document ).ready(function($) {
 			$(transcript_text).prop('disabled', true);
 
 			$('.transcript-upload-box').html('<div class="transcript-text">File uploaded: <strong>' + filename + '</strong></div><a id="remove-transcript-file" class="text-danger" href="javascript: void(0);"><i class="fal fa-trash-alt"></i> Remove</a>');
+			$('#update-transcript').prop('disabled', false);
 		}
 	});
 
@@ -852,6 +865,14 @@ jQuery( document ).ready(function($) {
 	$(document).on('click', '#remove-transcript-file', function(e) {
 		$(transcript_file).val('');
 		$(transcript_file).trigger('change');
+		$('#update-transcript').prop('disabled', false);
+	});
+
+	/**
+	 * Transcript modal
+	 */
+	$('#transcript-modal').on('show.bs.modal', function (e) {
+		$('#update-transcript').prop('disabled', true);
 	});
 
 	/**
@@ -1059,7 +1080,7 @@ jQuery( document ).ready(function($) {
 
 		if (errors > 0) {
 			$('.modal-body-acf').animate({
-				scrollTop: $('.is-invalid').first().offset().top - $('.modal-body-acf').offset().top + $('.modal-body-acf').scrollTop() - 100  // Adjust by the current scroll position
+				scrollTop: $('.is-invalid').first().position().top + $('.modal-body-acf').scrollTop() - 100  // Adjust scroll position
 			}, 500);
 			return false;
 		}
@@ -1161,13 +1182,23 @@ jQuery( document ).ready(function($) {
 				$('#cfm-artwork-uploader .fd-result').html('<img src="' + artwork_url_local + '" width="200" height="200" class="img-fluid">');
 			}
 
-			// populate featured image.
-			const featured_image_url_local = localStorage.getItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local');
-			if ( '' != featured_image_url_local && undefined !== featured_image_url_local && null !== featured_image_url_local ) {
-				$('#cfm-featured-image-uploader .fd-uploader').hide();
-				$('#cfm-featured-image-uploader .fd-replace').show();
-				$('#cfm-featured-image-uploader .fd-result').html('<img src="' + featured_image_url_local + '" width="200" height="200" class="img-fluid">');
-			}
+			// populate image uploader.
+			$('.fake-dropzone.cfm-image-uploader').each(function () {
+				var $this = $(this),
+					$fd_uploader = $this.find('.fd-uploader'),
+					$fd_replace = $this.find('.fd-replace'),
+					$fd_result = $this.find('.fd-result');
+					$('input.fd-input-image-id').attr('name');
+
+				var image_url_input = $this.find('.fd-input-image-url').attr('name');
+				var image_url = $(document).cfmGetLocalStorage('cfm-form-publish-episode', image_url_input);
+
+				if ( '' != image_url && undefined !== image_url && null !== image_url ) {
+					$fd_uploader.hide();
+					$fd_replace.show();
+					$fd_result.html('<img src="' + image_url + '" width="200" height="200" class="img-fluid">');
+				}
+			});
 
 			// show apple podcasts title if checked.
 			const itunes_title_local = $(document).cfmGetLocalStorage('cfm-form-publish-episode', 'itunes_title');
@@ -1196,7 +1227,6 @@ jQuery( document ).ready(function($) {
 				localStorage.removeItem(key);
 
 				// custom.
-				localStorage.removeItem(cfmsync.CFMH_SHOWID + '_featured_image_url_local');
 				localStorage.removeItem(cfmsync.CFMH_SHOWID + '_post_content_wp_local');
 
 				// quilljs.js.

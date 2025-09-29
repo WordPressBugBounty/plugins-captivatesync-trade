@@ -40,3 +40,10 @@
   margin: 20px 0 40px;
   border: 1px solid;
 }
+
+body.single-captivate_podcast .fusion-wrapper .fusion-tb-header .cfm-player-iframe,
+body.single-captivate_podcast .fusion-wrapper .fusion-tb-header .cfm-transcript,
+body.single-captivate_podcast .fusion-wrapper .fusion-tb-footer .cfm-player-iframe,
+body.single-captivate_podcast .fusion-wrapper .fusion-tb-footer .cfm-transcript {
+  display: none !important;
+}

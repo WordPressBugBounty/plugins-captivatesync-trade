@@ -2,8 +2,8 @@
 Contributors: Kieran McKeefery, Mark Asquith, Captivate Audio Ltd
 Tags: podcast, podcasting, podcaster, itunes, captivate, CaptivateFM, powerpress, blubrry, Buzzsprout, Libsyn
 Requires at least: 5.7.0
-Tested up to: 6.7
-Stable tag: 3.0.3
+Tested up to: 6.8
+Stable tag: 3.2.2
 
 Captivate Sync™ is a WordPress plugin maintained and developed by Captivate, part of the Rebel Base Media family. With our background in Podcast Websites, WordPress development and podcast hosting, hundreds of independent podcasters trust Captivate Sync™ and Captivate to power their podcast brands everyday.
 
@@ -99,6 +99,41 @@ To install Captivate Sync™ manually, please follow these steps:
 2. List of your episodes that are synced to your website.
 
 == Changelog ==
+
+= 3.2.2 =
+* Released on 21/07/2025
+* Bug fix: Resolved an issue where list formatting of show notes was not preserved correctly when synced to Captivate and vice-versa.
+
+= 3.2.1 =
+* Released on 29/04/2025
+* Bug fix: Resolved an issue where missing data fields in the API response caused errors during manual sync.
+
+= 3.2.0 =
+* Released on 15/04/2025
+* Security Improvement: Addressed a vulnerability in the shortcode load more implementation
+* Settings: Added an option to enable or disable automatic syncing of show information
+* Settings: Added an option to enable or disable automatic syncing of new episodes
+* Settings: Added an option to enable or disable automatic syncing of existing episodes
+* Settings: Added an option to display Captivate-generated show notes as WordPress content on individual episode pages (available soon).
+* Settings: Added an option to enable or disable clickable timestamps in the show notes.
+* Settings: Added an option to show or hide the transcript section on single episode pages.
+* Improved the podcast selection process during synchronization to prevent previously selected podcasts from being re-synced, reducing unnecessary database queries and improving overall site performance
+* Separated automatic syncing of show information, new episodes, and existing episodes into individual WordPress scheduled tasks to reduce processing load.
+* Optimized episode list pagination in the admin area for enhanced performance and faster loading times.
+* Implemented caching for show information to reduce database queries
+
+= 3.1.0 =
+* Released on 07/01/2025
+* Added the ability to set custom social media titles, descriptions, and images for each episode.
+* Refactored episode synchronization functions for better performance and maintainability.
+* Enhanced shortcode implementation for the "Load More" functionality.
+* Updated the auto-sync and manual-sync processes to prioritize pulling new episodes before updating existing ones.
+* Updated QuillJS to match the version used in Captivate.
+* Bug fix: Resolved an issue where the link icon in the show notes editor wouldn't work on the first click after typing, but would function correctly on subsequent clicks.
+* Bug fix: Addressed a potential conflict with WooCommerce shop pages on certain websites.
+* Bug fix: Resolved an issue where authentication was expiring earlier than intended.
+* Bug fix: Resolved a conflict with the Astra theme that affected the use of artwork as the featured image and the season and episode number formatting.
+* Minor UI enhancements.
 
 = 3.0.3 =
 * Released on 27/11/2024

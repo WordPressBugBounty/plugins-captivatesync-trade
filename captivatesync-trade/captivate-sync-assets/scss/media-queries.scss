@@ -280,6 +280,20 @@
 	}
 }
 
+@media (max-width: 575px) {
+	#wpbody-content .wrap {
+		.cfm-data-table {
+			.search-episodes {
+				width: 100%;
+				input {
+					width: 100%;
+					min-width: auto !important;
+				}
+			}
+		}
+	}
+}
+
 @media (max-width: 479px) {
 	#wpbody-content .wrap {
 		.manage-podcasts {

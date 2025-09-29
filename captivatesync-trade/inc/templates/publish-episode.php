@@ -12,15 +12,15 @@ $user_shows 	= get_user_meta( get_current_user_id(), 'cfm_user_shows', true );
 $response 		= isset( $_GET['response'] ) ? sanitize_text_field( wp_unslash( $_GET['response'] ) ) : 0;
 
 if ( ! cfm_is_show_exists( $show_id ) ) {
-	wp_die( '<p>Show does not exists.</p>', '', array( 'link_url' => esc_url( admin_url( 'admin.php?page=pw-dashboard' ) ), 'link_text' => 'Return to Dashboard' ) );
+	wp_die( '<p>Show does not exists.</p>', '', array('link_url' => esc_url(admin_url()), 'link_text' => 'Return to Dashboard'));
 }
 
 if ( $is_edit && ( 'trash' == $post_status || false === $post_status ) ) {
-	wp_die( '<p>Episode does not exists.</p>', '', array( 'link_url' => esc_url( admin_url( 'admin.php?page=pw-dashboard' ) ), 'link_text' => 'Return to Dashboard' ) );
+	wp_die( '<p>Episode does not exists.</p>', '', array('link_url' => esc_url(admin_url()), 'link_text' => 'Return to Dashboard'));
 }
 
 if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! empty( $user_shows ) && ! in_array( $show_id, $user_shows ) ) ) ) {
-	wp_die( '<p>Sorry, you are not allowed to access this page.</p>', '', array( 'link_url' => esc_url( admin_url( 'admin.php?page=pw-dashboard' ) ), 'link_text' => 'Return to Dashboard' ) );
+	wp_die( '<p>Sorry, you are not allowed to access this page.</p>', '', array( 'link_url' => esc_url(admin_url()), 'link_text' => 'Return to Dashboard' ) );
 }
 ?>
 
@@ -98,6 +98,16 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 	$acf_option_field_value = get_post_meta( $post_id, 'acf_option_field_value', true );
 	$acf_option_field_label = get_post_meta( $post_id, 'acf_option_field_label', true );
 	$acf_option_field_group_label = get_post_meta( $post_id, 'acf_option_field_group_label', true );
+
+	$social_media_image_id = get_post_meta( $post_id, 'cfm_episode_social_media_image_id', true );
+	$social_media_image_url = get_post_meta( $post_id, 'cfm_episode_social_media_image_url', true );
+	$social_media_title = get_post_meta( $post_id, 'cfm_episode_social_media_title', true );
+	$social_media_description = get_post_meta( $post_id, 'cfm_episode_social_media_description', true );
+
+	$x_image_id = get_post_meta( $post_id, 'cfm_episode_x_image_id', true );
+	$x_image_url = get_post_meta( $post_id, 'cfm_episode_x_image_url', true );
+	$x_title = get_post_meta( $post_id, 'cfm_episode_x_title', true );
+	$x_description = get_post_meta( $post_id, 'cfm_episode_x_description', true );
 	?>
 
 	<?php require CFMH . 'inc/templates/template-parts/header.php'; ?>
@@ -168,7 +178,7 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 								<audio controls="controls" preload="none"><source type="audio/mpeg" src="<?php echo esc_attr( $media_url ); ?>"> Your browser does not support the audio element. </audio>
 								<div class="dropzone-result-info d-flex justify-content-between">
 									<div class="result-info">
-										<?php if ( $media_name ) : ?>
+										<?php if ( $media_name && $media_bit_rate_str && $media_duration_str ) : ?>
 											<strong><?php echo esc_html( $media_name ) ; ?></strong> <br><?php echo esc_html( $media_bit_rate_str ); ?> | <?php echo esc_html( $media_duration_str ); ?>
 										<?php else : ?>
 											<strong><?php echo esc_html( basename( $media_url ) ) ; ?></strong>
@@ -208,6 +218,18 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 						<input type="text" class="form-control<?php echo ( '' == $post_title ) ? ' post-title-empty' : ''; ?>" id="post_title" name="post_title" value="<?php echo esc_attr( $post_title ); ?>" placeholder="Your catchy episode title">
 					</div>
 
+					<!-- iTunes Title -->
+					<div class="cfm-field cfm-itunes-title-check mt-4">
+						<div class="form-check">
+							<input class="form-check-input" type="checkbox" id="post_title_check" name="post_title_check" value="" <?php echo ( $is_edit && '' != $itunes_title ) ? 'checked="checked"' : ''; ?>>
+							<label class="form-check-label" for="post_title_check">Display a different episode title on Apple Podcasts?</label>
+						</div>
+					</div>
+
+					<div class="cfm-field cfm-itunes-title mt-2<?php echo ( $is_edit && '' != $itunes_title ) ? '' : ' hidden'; ?>">
+						<input type="text" class="form-control" id="itunes_title" name="itunes_title" value="<?php echo esc_attr( $itunes_title ); ?>">
+					</div>
+
 					<!-- Episode Show Notes -->
 					<div class="cfm-field cfm-episode-shownotes mt-4">
 
@@ -217,25 +239,27 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 							</div>
 
 							<div class="col-sm-8 justify-content-end">
-								<div id="cfm-dropdown-dt-templates" class="cfm-dropdown-menu dropdown-dt-templates mb-2 float-lg-end">
-									<button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Show Notes Templates</button>
-									<div class="dropdown-menu">
-										<div class="dropdown-search"><i class="fal fa-search"></i><input type="search" class="form-control search" placeholder="Search Show Notes Templates"></div>
-										<div class="dropdown-contents">
-											<?php
-											$shownotes_templates = cfm_get_dynamic_text( $show_id, array( 'shownotes_template' ), array( 'all' ) );
+								<?php
+								$shownotes_templates = cfm_get_dynamic_text( $show_id, array( 'shownotes_template' ), array( 'all' ) );
 
-											if ( is_array( $shownotes_templates ) && ! empty( $shownotes_templates ) ) {
+								if ( is_array( $shownotes_templates ) && ! empty( $shownotes_templates ) ) :
+									?>
+									<div id="cfm-dropdown-dt-templates" class="cfm-dropdown-menu dropdown-dt-templates mb-2 ms-4 float-lg-end">
+										<button type="button" class="btn btn-outline-primary btn-md dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Show Notes Templates</button>
+										<div class="dropdown-menu">
+											<div class="dropdown-search"><i class="fal fa-search"></i><input type="search" class="form-control search" placeholder="Search Show Notes Templates"></div>
+											<div class="dropdown-contents">
+												<?php
 												foreach ( $shownotes_templates as $template ) {
 													echo '<a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#confirmation-modal" data-confirmation-title="Change Show Notes Template" data-confirmation-content="Changing to a different template will mean you\'ll lose your current content and it will reset." data-confirmation-button="cfm-change-shownotes-template" data-confirmation-button-text="Change Template" data-confirmation-reference="' . esc_attr( $template['name'] ) . '">' . esc_html( $template['name_human'] ) . '</a>';
 												}
-											}
-											?>
+												?>
+											</div>
 										</div>
 									</div>
-								</div>
+								<?php endif; ?>
 
-								<div class="form-check mb-2 me-4 mt-2 float-lg-end">
+								<div class="form-check mb-2 mt-2 float-lg-end">
 									<input type="checkbox" id="enable_wordpress_editor" name="enable_wordpress_editor" class="form-check-input" <?php echo $wp_editor == 'on' ? 'checked' : ''; ?>>
 									<label class="form-check-label" for="enable_wordpress_editor">Use WordPress Editor</label>
 								</div>
@@ -260,6 +284,10 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 
 								<textarea name="post_content" id="post_content" class="hidden" data-gramm="false"><?php echo $content; ?></textarea>
 
+								<small class="mt-2 text-end">
+									<a class="expand text-decoration-none">Expand Writing Area <i class="fa-regular ms-1 fa-expand"></i></a>
+								</small>
+
 							</div>
 
 							<div class="cfm-wordpress-editor<?php echo $wp_editor != 'on' ? ' hidden' : ''; ?>">
@@ -272,18 +300,6 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 
 						</div>
 
-					</div>
-
-					<!-- iTunes Title -->
-					<div class="cfm-field cfm-itunes-title-check mt-4">
-						<div class="form-check">
-							<input class="form-check-input" type="checkbox" id="post_title_check" name="post_title_check" value="" <?php echo ( $is_edit && '' != $itunes_title ) ? 'checked="checked"' : ''; ?>>
-							<label class="form-check-label" for="post_title_check">Display a different episode title on Apple Podcasts?</label>
-						</div>
-					</div>
-
-					<div class="cfm-field cfm-itunes-title mt-2<?php echo ( $is_edit && '' != $itunes_title ) ? '' : ' hidden'; ?>">
-						<input type="text" class="form-control" id="itunes_title" name="itunes_title" value="<?php echo esc_attr( $itunes_title ); ?>">
 					</div>
 
 					<!-- Episode Number and Season Number -->
@@ -371,7 +387,7 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 							?>
 						</div>
 
-						<textarea name="transcript_current" id="transcript_current" class="hidden"><?php echo esc_attr( $transcript_content ); ?></textarea>
+						<textarea name="transcript_current" id="transcript_current" class="hidden"><?php echo esc_textarea( $transcript_content ); ?></textarea>
 						<input type="hidden" name="transcript_type" id="transcript_type" value="<?php echo $is_transcript ? esc_attr( $transcript['transcription_uploaded'] ) : 'text'; ?>" />
 						<input type="hidden" name="transcript_updated" id="transcript_updated" value="0" />
 
@@ -390,7 +406,7 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 									<div class="modal-body">
 										<div class="mb-4 fw-light"><strong>Tip:</strong> make sure you follow the sample format below, otherwise your transcription may not appear properly in podcast apps that support this feature.</div>
 
-										<textarea name="transcript_text" id="transcript_text" rows="14" placeholder="Alfred 00:00&#10;Will you be wanting the Batpod, sir?&#10;&#10;Bruce 00:20&#10;In the middle of the day, Alfred? Not very subtle.&#10;&#10;Alfred 00:30&#10;The Lamborghini, then." class="form-control"<?php echo ( $is_transcript && 'file' == $transcript['transcription_uploaded'] ) ? ' disabled="disabled"' : ''; ?>><?php echo ( $is_transcript && 'text' == $transcript['transcription_uploaded'] ) ? esc_attr( $transcript['transcription_text'] ) : ''; ?></textarea>
+										<textarea name="transcript_text" id="transcript_text" rows="14" placeholder="Alfred 00:00&#10;Will you be wanting the Batpod, sir?&#10;&#10;Bruce 00:20&#10;In the middle of the day, Alfred? Not very subtle.&#10;&#10;Alfred 00:30&#10;The Lamborghini, then." class="form-control"<?php echo ( $is_transcript && 'file' == $transcript['transcription_uploaded'] ) ? ' disabled="disabled"' : ''; ?>><?php echo ( $is_transcript && 'text' == $transcript['transcription_uploaded'] ) ? esc_textarea( $transcript['transcription_text'] ) : ''; ?></textarea>
 
 										<div class="transcript-upload-box<?php echo ( $is_transcript && 'text' == $transcript['transcription_uploaded'] ) ? ' disabled' : ''; ?>">
 											<?php
@@ -406,7 +422,7 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 									</div>
 									<div class="modal-footer">
 										<button type="button" id="cancel-transcript" class="btn btn-outline-primary me-auto" data-bs-dismiss="modal">Cancel</button>
-										<button type="button" id="update-transcript" class="btn btn-primary">Update Transcript</button>
+										<button type="button" id="update-transcript" class="btn btn-primary" disabled="disabled">Update Transcript</button>
 									</div>
 								</div>
 							</div>
@@ -504,9 +520,9 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 					<label class="mb-3">Upload an episode specific image to replace your podcast’s usual cover art.</label>
 
 					<div id="cfm-artwork-uploader" class="cfm-dropzone fake-dropzone">
-						<div class="row row-eq-height">
-							<div class="col-lg-3 col-md-4">
-								<div id="fd-result" class="fd-result">
+						<div class="fd-wrap">
+							<div class="fd-col-image">
+								<div class="fd-result">
 									<?php if ( $is_edit && $artwork_url ) : ?>
 										<img src="<?php echo esc_attr( $artwork_url . '?width=400&height=400' ); ?>" width="200" height="200" class="img-fluid">
 									<?php endif; ?>
@@ -517,18 +533,17 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 								</div>
 							</div>
 
-							<div class="col-lg-9 col-md-8 mt-4 mt-md-0 align-self-center">
-
+							<div class="fd-col-browse">
 								<div class="fd-uploader"<?php echo ( ! $is_edit || ( $is_edit && ! $artwork_url ) ) ? ' style="display: block";' : ''; ?>>
 									<div id="artwork-dropzone" class="dropzone artwork-dropzone">
 										<div class="dz-default">
-											<i class="fal fa-file-image"></i>
+											<i class="fal fa-image"></i>
 											<strong>Browse media library</strong>
 										</div>
 									</div>
 								</div>
 
-								<div id="fd-replace" class="fd-replace"<?php echo ( $is_edit && $artwork_url ) ? ' style="display: block";' : ''; ?>>
+								<div class="fd-replace"<?php echo ( $is_edit && $artwork_url ) ? ' style="display: block";' : ''; ?>>
 									<button type="button" class="btn btn-primary mb-md-4 d-md-block mr-3 mr-md-0 upload-new-image">Upload New Image</button>
 									<button type="button" class="btn btn-outline-primary remove-image">Remove Image</button>
 								</div>
@@ -542,6 +557,8 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 							</div>
 						</div>
 					</div>
+
+					<small class="d-block pt-3">Your artwork should be 3000px x 3000px, PNG or JPEG, and under 2MB in size. Please <a class="text-decoration-none" href="https://help.captivate.fm/en/articles/3315645-podcast-artwork-specifications" target="_blank">check out our help article for more details.</a></small>
 				</div>
 			</div>
 
@@ -563,7 +580,7 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 					<div class="cfm-field cfm-seo-description mt-4">
 						<label for="seo_description">SEO Description</label>
 
-						<textarea class="form-control" id="seo_description" name="seo_description" rows="4" placeholder="Short, to the point SEO friendly description"><?php echo esc_attr( $seo_description ); ?></textarea>
+						<textarea class="form-control" id="seo_description" name="seo_description" rows="4" placeholder="Short, to the point SEO friendly description"><?php echo esc_textarea( $seo_description ); ?></textarea>
 
 						<div class="cfm-seo-description-count">
 							<div class="cfm-seo-description-progress" style="width: <?php echo $seo_description_width; ?>%; background: <?php echo $seo_description_color; ?>"></div>
@@ -593,10 +610,10 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 				<div class="col-lg-9">
 					<label class="mb-3">Upload a featured image for your website.</label>
 
-					<div id="cfm-featured-image-uploader" class="cfm-dropzone fake-dropzone">
-						<div class="row row-eq-height">
-							<div class="col-lg-3 col-md-4">
-								<div id="fd-result" class="fd-result">
+					<div id="cfm-featured-image-uploader" class="cfm-dropzone fake-dropzone cfm-image-uploader" data-uploader-title="Select Website Featured Image">
+						<div class="fd-wrap">
+							<div class="fd-col-image">
+								<div class="fd-result">
 									<?php if ( $is_edit && $featured_image ) : ?>
 										<img src="<?php echo esc_attr( $featured_image ); ?>" width="200" height="200" class="img-fluid">
 									<?php endif; ?>
@@ -607,27 +624,26 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 								</div>
 							</div>
 
-							<div class="col-lg-9 col-md-8 mt-4 mt-md-0 align-self-center">
-
+							<div class="fd-col-browse">
 								<div class="fd-uploader"<?php echo ( ! $is_edit || ( $is_edit && ! $featured_image ) ) ? ' style="display: block";' : ''; ?>>
-									<div id="featured-image-dropzone" class="dropzone featured-image-dropzone">
+									<div class="dropzone featured-image-dropzone">
 										<div class="dz-default">
-											<i class="fal fa-file-image"></i>
+											<i class="fal fa-image"></i>
 											<strong>Browse media library</strong>
 										</div>
 									</div>
 								</div>
 
-								<div id="fd-replace" class="fd-replace"<?php echo ( $is_edit && $featured_image ) ? ' style="display: block";' : ''; ?>>
+								<div class="fd-replace"<?php echo ( $is_edit && $featured_image ) ? ' style="display: block";' : ''; ?>>
 									<button type="button" class="btn btn-primary mb-md-4 d-md-block mr-3 mr-md-0 upload-new-image">Upload New Image</button>
 									<button type="button" class="btn btn-outline-primary remove-image">Remove Image</button>
 								</div>
 
-								<input type="hidden" name="featured_image" id="featured_image" value="<?php echo esc_attr( $image_id ); ?>" />
+								<input type="hidden" name="featured_image_id" class="fd-input-image-id" value="<?php echo esc_attr( $image_id ); ?>" />
+								<input type="hidden" name="featured_image_url" class="fd-input-image-url" value="<?php echo esc_attr( $featured_image ); ?>" />
 							</div>
 						</div>
 					</div>
-
 
 					<?php if ( current_user_can( 'edit_others_posts' ) ) : ?>
 						<div class="cfm-field cfm-website-author mt-4">
@@ -782,7 +798,7 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 					<div class="cfm-field cfm-website-excerpt mt-4">
 						<label for="post_excerpt">Website Excerpt</label>
 
-						<textarea class="form-control" id="post_excerpt" name="post_excerpt" rows="4" placeholder="Short description shown on your website"><?php echo esc_attr( $post_excerpt ); ?></textarea>
+						<textarea class="form-control" id="post_excerpt" name="post_excerpt" rows="4" placeholder="Short description shown on your website"><?php echo esc_textarea( $post_excerpt ); ?></textarea>
 
 						<small>Excerpts allow you to display short summaries of your show notes instead of the full text of each episode on your website.</small>
 					</div>
@@ -791,7 +807,7 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 						<div class="cfm-field cfm-website-custom-field mt-4">
 							<label for="custom_field">Website Custom Field</label>
 
-							<textarea class="form-control" id="custom_field" name="custom_field" rows="4"><?php echo esc_attr( $custom_field ); ?></textarea>
+							<textarea class="form-control" id="custom_field" name="custom_field" rows="4"><?php echo esc_textarea( $custom_field ); ?></textarea>
 
 							<small>Custom content for your website shown at the bottom of your episode show notes.</small>
 						</div>
@@ -801,78 +817,224 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 					if ( CFMH_Hosting_Publish_Episode::render_acf_field_groups('captivate_podcast', 'exists') ) :
 						?>
 						<div class="cfm-field cfm-website-acf mt-4">
-							<a id="acf-fields" data-bs-toggle="modal" data-bs-target="#acf-modal" href="#" class="text-decoration-none"><i class="fal fa-cogs me-2"></i>Advanced Custom Fields</a>
+							<label>Advanced Custom Fields</label>
+
+							<div class="acf-fields-wrap">
+								<a id="acf-fields" data-bs-toggle="modal" data-bs-target="#acf-modal" href="#" class="text-decoration-none"><i class="fal fa-cogs me-2"></i>Manage ACF Fields</a>
+							</div>
+
+							<small>ACF Field Groups created through the ACF plugin can be easily managed here. Customize your content with a variety of field types such as Text, Textarea, Select, Radio, WYSIWYG, Number, Range, Email, URL, and oEmbed to tailor your site's content precisely to your needs.</small>
+
+							<!-- ACF Modal -->
+							<div class="modal fade modal-slideout" id="acf-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true">
+								<div class="modal-dialog modal-dialog-slideout" role="document">
+									<div class="modal-content">
+										<div class="offcanvas-header flex-column align-items-end mb-4">
+											<button type="button" id="close-acf" aria-label="Close" data-bs-dismiss="modal" class="close-btn"> Close <i class="fas fa-arrow-right"></i></button>
+										</div>
+
+										<div class="modal-header">
+											<h4 class="modal-title">Advanced Custom Fields</h4>
+											<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+										</div>
+										<div class="modal-body modal-body-acf">
+
+											<div class="cfm-acf-options mb-2">
+												<div class="row cfm-modal-field">
+													<div class="col-sm-6 mb-2 mb-sm-0">
+														<label class="mb-0 me-4">Display on Single Episode Pages?</label>
+													</div>
+													<div class="col-sm-6">
+														<select name="acf_option_field_value">
+															<option value="no" <?php selected($acf_option_field_value, 'no'); ?>>No</option>
+															<option value="above" <?php selected($acf_option_field_value, 'above'); ?>>Above Content</option>
+															<option value="below" <?php selected($acf_option_field_value, 'below'); ?>>Below Content</option>
+														</select>
+													</div>
+												</div>
+											</div>
+											<div class="cfm-acf-options mb-2">
+												<div class="row cfm-modal-field">
+													<div class="col-sm-6 mb-2 mb-sm-0">
+														<label class="mb-0 me-4">Display ACF field label?</label>
+													</div>
+													<div class="col-sm-6">
+														<select name="acf_option_field_label">
+															<option value="yes" <?php selected($acf_option_field_label, 'yes'); ?>>Yes</option>
+															<option value="no" <?php selected($acf_option_field_label, 'no'); ?>>No</option>
+														</select>
+													</div>
+												</div>
+											</div>
+											<div class="cfm-acf-options mb-4">
+												<div class="row cfm-modal-field">
+													<div class="col-sm-6 mb-2 mb-sm-0">
+														<label class="mb-0 me-4">Display ACF field group label?</label>
+													</div>
+													<div class="col-sm-6">
+														<select name="acf_option_field_group_label">
+															<option value="yes" <?php selected($acf_option_field_group_label, 'yes'); ?>>Yes</option>
+															<option value="no" <?php selected($acf_option_field_group_label, 'no'); ?>>No</option>
+														</select>
+													</div>
+												</div>
+											</div>
+
+											<div class="cfm-field-groups modal-field-groups-wrap">
+												<?php CFMH_Hosting_Publish_Episode::render_acf_field_groups('captivate_podcast', 'field_groups', $post_id); ?>
+												<input type="hidden" name="acf_nonce" value="<?php echo wp_create_nonce('acf_save_nonce'); ?>" />
+											</div>
+
+										</div>
+										<div class="modal-footer">
+											<button type="button" id="close-acf" class="btn btn-outline-primary me-auto" data-bs-dismiss="modal">Close</button>
+										</div>
+									</div>
+								</div>
+							</div>
+							<!-- /ACF Modal -->
+						</div>
+					<?php endif; ?>
+
+					<div class="cfm-field cfm-website-social-media mt-4">
+						<label>Social Media Appearance</label>
+
+						<div class="social-media-wrap">
+							<a id="social-media" data-bs-toggle="modal" data-bs-target="#social-media-modal" href="#" class="text-decoration-none"><i class="fal fa-share-nodes me-2"></i>Customize Social Media Appearance</a>
 						</div>
 
-						<!-- ACF Modal -->
-						<div class="modal fade modal-slideout" id="acf-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true">
+						<small>Customize how your episode appears on social media platforms like Facebook, X, Instagram, WhatsApp, Threads, LinkedIn, Slack, and more.</small>
+
+						<!-- Social Media Modal -->
+						<div class="modal fade modal-slideout" id="social-media-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true">
 							<div class="modal-dialog modal-dialog-slideout" role="document">
 								<div class="modal-content">
 									<div class="offcanvas-header flex-column align-items-end mb-4">
-										<button type="button" id="close-acf" aria-label="Close" data-bs-dismiss="modal" class="close-btn"> Close <i class="fas fa-arrow-right"></i></button>
+										<button type="button" aria-label="Close" data-bs-dismiss="modal" class="close-btn"> Close <i class="fas fa-arrow-right"></i></button>
 									</div>
 
 									<div class="modal-header">
-										<h4 class="modal-title">Advanced Custom Fields</h4>
+										<h4 class="modal-title">Social Media Appearance</h4>
 										<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 									</div>
-									<div class="modal-body modal-body-acf">
+									<div class="modal-body">
 
-										<div class="cfm-acf-options mb-2">
-											<div class="row cfm-modal-field">
-												<div class="col-sm-6 mb-2 mb-sm-0">
-													<label class="mb-0 me-4">Display ACF field value?</label>
-												</div>
-												<div class="col-sm-6">
-													<select name="acf_option_field_value">
-														<option value="no" <?php selected($acf_option_field_value, 'no'); ?>>No</option>
-														<option value="above" <?php selected($acf_option_field_value, 'above'); ?>>Above Content</option>
-														<option value="below" <?php selected($acf_option_field_value, 'below'); ?>>Below Content</option>
-													</select>
+										<div class="cfm-modal-field mb-4">
+											<label class="mb-2">Social image</label>
+
+											<div id="cfm-social-media-image-uploader" class="cfm-dropzone fake-dropzone cfm-image-uploader" data-uploader-title="Select Social Media Image">
+												<div class="fd-wrap">
+													<div class="fd-col-image">
+														<div class="fd-result">
+															<?php if ( $is_edit && $social_media_image_url ) : ?>
+																<img src="<?php echo esc_attr( $social_media_image_url ); ?>" width="200" height="200" class="img-fluid">
+															<?php endif; ?>
+
+															<?php if ( ! $is_edit || ( $is_edit && ! $social_media_image_url ) ) : ?>
+																<i class="fal fa-image"></i>
+															<?php endif; ?>
+														</div>
+													</div>
+
+													<div class="fd-col-browse">
+														<div class="fd-uploader"<?php echo ( ! $is_edit || ( $is_edit && ! $social_media_image_url ) ) ? ' style="display: block";' : ''; ?>>
+															<div class="dropzone social-image-dropzone">
+																<div class="dz-default">
+																	<i class="fal fa-image"></i>
+																	<strong>Browse media library</strong>
+																</div>
+															</div>
+														</div>
+
+														<div class="fd-replace"<?php echo ( $is_edit && $social_media_image_url ) ? ' style="display: block";' : ''; ?>>
+															<button type="button" class="btn btn-primary btn-md mb-md-2 d-md-block mr-3 mr-md-0 upload-new-image">Upload New Image</button>
+															<button type="button" class="btn btn-outline-primary btn-md remove-image">Remove Image</button>
+														</div>
+
+														<input type="hidden" name="social_media_image_id" class="fd-input-image-id" value="<?php echo esc_attr( $social_media_image_id ); ?>" />
+														<input type="hidden" name="social_media_image_url" class="fd-input-image-url" value="<?php echo esc_attr( $social_media_image_url ); ?>" />
+													</div>
 												</div>
 											</div>
+
+											<small>Defaults to your featured image if empty</a></small>
 										</div>
-										<div class="cfm-acf-options mb-2">
-											<div class="row cfm-modal-field">
-												<div class="col-sm-6 mb-2 mb-sm-0">
-													<label class="mb-0 me-4">Display ACF field label?</label>
-												</div>
-												<div class="col-sm-6">
-													<select name="acf_option_field_label">
-														<option value="yes" <?php selected($acf_option_field_label, 'yes'); ?>>Yes</option>
-														<option value="no" <?php selected($acf_option_field_label, 'no'); ?>>No</option>
-													</select>
-												</div>
-											</div>
+
+										<div class="cfm-modal-field mb-4">
+											<label class="mb-2">Social title</label>
+											<input type="text" name="social_media_title" value="<?php echo esc_attr( $social_media_title ); ?>">
 										</div>
-										<div class="cfm-acf-options mb-4">
-											<div class="row cfm-modal-field">
-												<div class="col-sm-6 mb-2 mb-sm-0">
-													<label class="mb-0 me-4">Display ACF field group label?</label>
-												</div>
-												<div class="col-sm-6">
-													<select name="acf_option_field_group_label">
-														<option value="yes" <?php selected($acf_option_field_group_label, 'yes'); ?>>Yes</option>
-														<option value="no" <?php selected($acf_option_field_group_label, 'no'); ?>>No</option>
-													</select>
+
+										<div class="cfm-modal-field mb-4">
+											<label class="mb-2">Social description</label>
+											<textarea name="social_media_description" rows="3" maxlength="150"><?php echo esc_textarea( $social_media_description ); ?></textarea>
+										</div>
+
+										<div class="mb-4 fw-light">Customize how your post appears on X, fill out the 'X Appearance' settings below. If left empty, the general 'Social Media Appearance' settings above will be used for sharing on X.</div>
+
+										<div class="cfm-modal-field-group-name mb-4">X Appearance</div>
+
+										<div class="cfm-modal-field mb-4">
+											<label class="mb-2">X image</label>
+
+											<div id="cfm-x-image-uploader" class="cfm-dropzone fake-dropzone cfm-image-uploader" data-uploader-title="Select X Image">
+												<div class="fd-wrap">
+													<div class="fd-col-image">
+														<div class="fd-result">
+															<?php if ( $is_edit && $x_image_url ) : ?>
+																<img src="<?php echo esc_attr( $x_image_url ); ?>" width="200" height="200" class="img-fluid">
+															<?php endif; ?>
+
+															<?php if ( ! $is_edit || ( $is_edit && ! $x_image_url ) ) : ?>
+																<i class="fal fa-image"></i>
+															<?php endif; ?>
+														</div>
+													</div>
+
+													<div class="fd-col-browse">
+
+														<div class="fd-uploader"<?php echo ( ! $is_edit || ( $is_edit && ! $x_image_url ) ) ? ' style="display: block";' : ''; ?>>
+															<div class="dropzone social-image-dropzone">
+																<div class="dz-default">
+																	<i class="fal fa-image"></i>
+																	<strong>Browse media library</strong>
+																</div>
+															</div>
+														</div>
+
+														<div class="fd-replace"<?php echo ( $is_edit && $x_image_url ) ? ' style="display: block";' : ''; ?>>
+															<button type="button" class="btn btn-primary btn-md mb-md-2 d-md-block mr-3 mr-md-0 upload-new-image">Upload New Image</button>
+															<button type="button" class="btn btn-outline-primary btn-md remove-image">Remove Image</button>
+														</div>
+
+														<input type="hidden" name="x_image_id" class="fd-input-image-id" value="<?php echo esc_attr( $x_image_id ); ?>" />
+														<input type="hidden" name="x_image_url" class="fd-input-image-url" value="<?php echo esc_attr( $x_image_url ); ?>" />
+													</div>
 												</div>
 											</div>
 										</div>
 
-										<div class="cfm-field-groups modal-field-groups-wrap">
-											<?php CFMH_Hosting_Publish_Episode::render_acf_field_groups('captivate_podcast', 'field_groups', $post_id); ?>
-											<input type="hidden" name="acf_nonce" value="<?php echo wp_create_nonce('acf_save_nonce'); ?>" />
+										<small>Defaults to your social image if empty</a></small>
+
+										<div class="cfm-modal-field mb-4">
+											<label class="mb-2">X title</label>
+											<input type="text" name="x_title" value="<?php echo esc_attr( $x_title ); ?>">
+										</div>
+
+										<div class="cfm-modal-field mb-4">
+											<label class="mb-2">X description</label>
+											<textarea name="x_description" rows="3" maxlength="150"><?php echo esc_textarea( $x_description ); ?></textarea>
 										</div>
 
 									</div>
 									<div class="modal-footer">
-										<button type="button" id="close-acf" class="btn btn-outline-primary me-auto" data-bs-dismiss="modal">Close</button>
+										<button type="button" class="btn btn-outline-primary me-auto" data-bs-dismiss="modal">Close</button>
 									</div>
 								</div>
 							</div>
 						</div>
-						<!-- /ACF Modal -->
-					<?php endif; ?>
+						<!-- /Social Media Modal -->
+					</div>
 
 				</div>
 			</div>

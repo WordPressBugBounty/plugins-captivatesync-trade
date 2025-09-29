@@ -23,21 +23,17 @@ if ( ! class_exists( 'CFMH_Hosting_Data' ) ) :
 		 */
 		public static function register() {
 
-			$cfm_general_settings = get_option( 'cfm_general_settings' );
-
 			// Archive title.
-			$archive_title = ( isset( $cfm_general_settings['archive_title'] ) && '' != $cfm_general_settings['archive_title'] ) ? $cfm_general_settings['archive_title'] : 'Captivate Podcasts';
+			$archive_title = CFMH_Hosting_Settings::get_settings( 'archive_title', 'Captivate Podcasts' );
 
 			// Archive enable/disable and slug.
-			if ( ( isset( $cfm_general_settings['archive_enable'] ) && '0' == $cfm_general_settings['archive_enable'] ) ) {
-				$has_archive = false;
-			}
-			else {
-				$has_archive = ( isset( $cfm_general_settings['archive_slug'] ) && '' != $cfm_general_settings['archive_slug']) ? $cfm_general_settings['archive_slug'] : true;
-			}
+			$archive_enable = CFMH_Hosting_Settings::get_settings( 'archive_enable', '1' );
+			$has_archive = $archive_enable == '0' ? false : true;
+			$archive_slug = CFMH_Hosting_Settings::get_settings( 'archive_slug', 'captivate-podcast' );
+			$has_archive = ( '0' == $has_archive ) ? false : $archive_slug;
 
 			// Single posts slug.
-			$single_slug = ( isset( $cfm_general_settings['single_slug'] ) && '' != $cfm_general_settings['single_slug'] ) ? $cfm_general_settings['single_slug'] : 'captivate-podcast';
+			$single_slug = CFMH_Hosting_Settings::get_settings( 'single_slug', 'captivate-podcast' );
 
 			// Captivate Podcast Post Type.
 			$labels = array(
@@ -72,15 +68,10 @@ if ( ! class_exists( 'CFMH_Hosting_Data' ) ) :
 				'rewrite'             => array( 'slug' => $single_slug, 'with_front' => false ),
 				'supports'            => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'trackbacks', 'custom-fields', 'comments', 'revisions', 'sticky' ),
 			);
-
-			if ( ( true === cfm_user_authentication() ) ) :
-
-				register_post_type( 'captivate_podcast', $args );
-
-			endif;
+			register_post_type( 'captivate_podcast', $args );
 
 			// Category Archive Slug
-			$category_archive_slug = ( isset( $cfm_general_settings['category_archive_slug'] ) && '' != $cfm_general_settings['category_archive_slug'] ) ? $cfm_general_settings['category_archive_slug'] : 'captivate-category';
+			$category_archive_slug = CFMH_Hosting_Settings::get_settings( 'category_archive_slug', 'captivate-category' );
 
 			// Podcast Category Custom Taxonomy.
 			$labels = array(
@@ -111,15 +102,10 @@ if ( ! class_exists( 'CFMH_Hosting_Data' ) ) :
 				'show_ui'           => true,
 				'rewrite'           => array( 'slug' => $category_archive_slug ),
 			);
-
-			if ( ( true === cfm_user_authentication() ) ) :
-
-				register_taxonomy( 'captivate_category', array( 'captivate_podcast' ), $args );
-
-			endif;
+			register_taxonomy( 'captivate_category', array( 'captivate_podcast' ), $args );
 
 			// Tag Archive Slug
-			$tag_archive_slug = ( isset( $cfm_general_settings['tag_archive_slug'] ) && '' != $cfm_general_settings['tag_archive_slug'] ) ? $cfm_general_settings['tag_archive_slug'] : 'captivate-tag';
+			$tag_archive_slug = CFMH_Hosting_Settings::get_settings( 'tag_archive_slug', 'captivate-tag' );
 
 			// Podcast Tags Custom Taxonomy.
 			$labels = array(
@@ -150,12 +136,7 @@ if ( ! class_exists( 'CFMH_Hosting_Data' ) ) :
 				'show_ui'           => true,
 				'rewrite'           => array( 'slug' => $tag_archive_slug ),
 			);
-
-			if ( ( true === cfm_user_authentication() ) ) :
-
-				register_taxonomy( 'captivate_tag', array( 'captivate_podcast' ), $args );
-
-			endif;
+			register_taxonomy( 'captivate_tag', array( 'captivate_podcast' ), $args );
 
 		}
 

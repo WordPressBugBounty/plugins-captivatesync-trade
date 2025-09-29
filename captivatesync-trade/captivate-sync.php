@@ -3,7 +3,7 @@
  Plugin Name:  Captivate Sync&trade;
  Plugin URI:   https://captivate.fm/sync
  Description:  Captivate Sync&trade; is the WordPress podcasting plugin from Captivate.fm. Publish directly from your WordPress site or your Captivate podcast hosting account and stay in-sync wherever you are!
- Version:      3.0.3
+ Version:      3.2.2
  Author:       Captivate Audio Ltd
  Author URI:   https://www.captivate.fm
  **/
@@ -21,7 +21,7 @@ if ( ! defined( 'CFMH_URL' ) ) {
 }
 
 if ( ! defined( 'CFMH_VERSION' ) ) {
-	define( 'CFMH_VERSION', '3.0.3' );
+	define( 'CFMH_VERSION', '3.2.2' );
 }
 
 if ( ! defined( 'CFMH_API_URL' ) ) {
@@ -82,6 +82,7 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 			register_activation_hook( __FILE__, array( $this, '_install' ) );
 
 			// Scheduler
+			add_filter( 'cron_schedules', array( $this, '_custom_cron_schedules' ) );
 			register_activation_hook( __FILE__, array( $this, '_set_scheduler' ) );
 			register_deactivation_hook( __FILE__, array( $this, '_clear_scheduler' ) );
 
@@ -118,13 +119,13 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 							    // sync episodes.
 							    switch ( $event_operation ) {
     								case 'CREATE':
-    									cfm_sync_episodes( $show_id, array( 'create' ), array( 'all' ) );
+										cfm_sync_wp_episode($show_id, $episode_id, 'create');
     									break;
     								case 'UPDATE':
-    									cfm_sync_episodes( $show_id, array( 'update' ), array( $episode_id ) );
+    									cfm_sync_wp_episode($show_id, $episode_id, 'update');
     									break;
     								case 'DELETE':
-    								    cfm_sync_episodes( $show_id, array( 'delete' ), array( 'all' ) );
+    								    cfm_sync_wp_episode($show_id, $episode_id, 'delete');
     								    break;
     								default:
     									break;
@@ -187,6 +188,23 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 				wp_schedule_event( time(), 'hourly', 'cfm_sync_new_episodes' );
 			}
 
+			// Set schedule to update existing episodes
+			if ( ! wp_next_scheduled( 'cfm_sync_existing_episodes' ) ) {
+				// 30-minute offset
+				wp_schedule_event( time() + 1800, 'cfm_90min', 'cfm_sync_existing_episodes' );
+			}
+
+			// Set schedule to update show information
+			if ( ! wp_next_scheduled( 'cfm_sync_show_information' ) ) {
+				// 15-minute offset
+				wp_schedule_event( time() + 900, 'cfm_150min', 'cfm_sync_show_information' );
+			}
+
+			// clear old schedules if exists
+			if ( wp_next_scheduled( 'cfm_sync_update_episodes' ) ) {
+				wp_clear_scheduled_hook( 'cfm_sync_update_episodes' );
+			}
+
 		}
 
 		/**
@@ -195,10 +213,31 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 		 * @since 1.0
 		 */
 		public static function _clear_scheduler() {
-
-			// Clear schedule to get new episodes from captivate and insert to WP.
 			wp_clear_scheduled_hook( 'cfm_sync_new_episodes' );
+			wp_clear_scheduled_hook( 'cfm_sync_existing_episodes' );
+			wp_clear_scheduled_hook( 'cfm_sync_show_information' );
+		}
 
+		/**
+		 * Custom schedules
+		 *
+		 * @since 3.2.0
+		 */
+		public static function _custom_cron_schedules($schedules = array()) {
+
+			// every 90 minutes (1.5 hours)
+			$schedules['cfm_90min'] = array(
+				'interval' => 5400,
+				'display'  => __( 'Every 90 minutes' ),
+			);
+
+			 // every 150 minutes (2.5 hours)
+			 $schedules['cfm_150min'] = array(
+				'interval' => 9000,
+				'display'  => __( 'Every 150 minutes' ),
+			);
+
+			return $schedules;
 		}
 
 		/**
@@ -212,6 +251,8 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 			include_once CFMH . 'inc/class-captivate-sync-data.php';
 			include_once CFMH . 'inc/class-captivate-sync-front.php';
 			include_once CFMH . 'inc/class-captivate-sync-shortcode.php';
+
+			include_once CFMH . 'inc/class-captivate-sync-settings.php';
 
 			if ( is_admin() ) :
 				include_once CFMH . 'inc/class-captivate-sync-admin.php';
@@ -245,17 +286,13 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 			// captivate_podcast rewrite slug.
 			add_filter( 'register_post_type_args', array( 'CFMH_Hosting_Front', 'register_post_type_args' ), 10, 2 );
 
-			add_filter( 'the_title', array( 'CFMH_Hosting_Front', 'title_filter' ), 10, 1 );
-
-			// add player to episodes.
-			add_filter( 'the_excerpt', array( 'CFMH_Hosting_Front', 'content_filter' ), 11 );
-			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'content_filter' ), 11 );
+			add_filter( 'the_title', array( 'CFMH_Hosting_Front', 'title_filter' ), 10, 2 );
 
 			// remove captivate_podcast edit link.
 			add_filter( 'edit_post_link', array( 'CFMH_Hosting_Front', 'edit_post_link' ) );
 
 			// meta data.
-			add_action( 'wp_head', array( 'CFMH_Hosting_Front', 'add_meta_data' ), 5 );
+			add_action( 'wp_head', array( 'CFMH_Hosting_Front', 'add_meta_data' ), 30 );
 
 			// rss feed.
 			add_action( 'wp_head', array( 'CFMH_Hosting_Front', 'add_show_feed_rss' ), 1 );
@@ -263,23 +300,33 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 			// player api.
 			add_action( 'wp_enqueue_scripts', array( 'CFMH_Hosting_Front', 'assets' ) );
 
-			// transcription.
-			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'content_transcript' ), 11 );
+			// replace content with shownotes_rendered.
+			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'shownotes_rendered' ), 10 );
 
 			// add custom field to episodes.
 			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'pw_content_filter' ), 11 );
 
+			// ACF
+			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'acf_fields_on_content' ), 11 );
+
+			// add player to episodes.
+			add_filter( 'the_excerpt', array( 'CFMH_Hosting_Front', 'content_filter' ), 12 );
+			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'content_filter' ), 12 );
+
+			// transcription.
+			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'content_transcript' ), 13 );
+
 			// auto-timestamp.
-			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'content_auto_timestamp' ), 12 );
+			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'content_auto_timestamp' ), 13 );
 
 			// dynamic text.
-			add_filter( 'the_excerpt', array( 'CFMH_Hosting_Front', 'content_dynamic_text' ), 13 );
-			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'content_dynamic_text' ), 13 );
+			add_filter( 'the_excerpt', array( 'CFMH_Hosting_Front', 'content_dynamic_text' ), 14 );
+			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'content_dynamic_text' ), 14 );
 
 			// use artwork as featured image.
-			add_filter( 'wp_get_attachment_image_src', array( 'CFMH_Hosting_Front', 'use_artwork' ), 10, 4 );
-			add_filter( 'has_post_thumbnail', array( 'CFMH_Hosting_Front', 'filter_has_post_thumbnail' ) );
-			add_filter( 'post_thumbnail_html', array( 'CFMH_Hosting_Front', 'default_post_thumbnail_html' ), 10, 5 );
+			add_filter( 'wp_get_attachment_image_src', array( 'CFMH_Hosting_Front', 'use_artwork' ), 20, 4 );
+			add_filter( 'has_post_thumbnail', array( 'CFMH_Hosting_Front', 'filter_has_post_thumbnail' ), 10, 2 );
+			add_filter( 'post_thumbnail_html', array( 'CFMH_Hosting_Front', 'default_post_thumbnail_html' ), 20, 5 );
 
 			// redirect old slug to new slug - for podcasts with selected page mapping.
 			add_filter( 'template_redirect', array( 'CFMH_Hosting_Front', 'redirect_old_slug' ) );
@@ -294,8 +341,11 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 			// Get new episodes from captivate and insert to WP
 			add_action( 'cfm_sync_new_episodes', array( $this, 'get_new_episodes' ) );
 
-			// ACF
-			add_filter( 'the_content', array( 'CFMH_Hosting_Front', 'acf_fields_on_content' ), 11 );
+			// Update episodes on WP
+			add_action( 'cfm_sync_existing_episodes', array( $this, 'update_existing_episodes' ) );
+
+			// Update show information on WP
+			add_action( 'cfm_sync_show_information', array( $this, 'sync_show_information' ) );
 
 			if ( is_admin() ) :
 
@@ -348,7 +398,7 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 				add_action( 'wp_ajax_render-dt-variables', array( 'CFMH_Hosting_Publish_Episode', 'render_dt_variables' ) );
 
 				// settings.
-				add_action( 'wp_ajax_save-settings', array( 'CFMH_Hosting_Admin', 'save_settings' ) );
+				add_action( 'wp_ajax_save-settings', array( 'CFMH_Hosting_Settings', 'save_settings' ) );
 
 				// shortcode.
 				add_action( 'wp_ajax_shortcode-load-episodes', array( 'CFM_Hosting_Shortcode', 'shortcode_load_episodes' ) );
@@ -473,17 +523,73 @@ if ( ! class_exists( 'CFM_Hosting' ) ) :
 		 */
 		public static function get_new_episodes() {
 
-			// sync only if authorized.
-			if ( true === cfm_user_authentication() ) {
+			$autosync_new_episodes = CFMH_Hosting_Settings::get_settings( 'autosync_new_episodes', '1' );
 
+			if ( $autosync_new_episodes !== '0' ) {
 				$current_shows = cfm_get_show_ids();
 
-				if ( ! empty( $current_shows ) ) {
+				if ( !empty($current_shows) ) {
+					foreach ($current_shows as $show_id) {
+						try {
+							cfm_sync_episodes($show_id, array('create'));
+						} catch (Exception $e) {
+							cfm_generate_log("AUTOSYNC-NEW-EPISODES ({$show_id})", $e->getMessage());
+							continue;
+						}
+					}
+				}
+			}
 
-					foreach ( $current_shows as $show_id ) {
-						cfm_sync_shows( $show_id );
-						cfm_sync_plugin_version( $show_id );
-						cfm_sync_episodes( $show_id, array( 'all' ), array( 'all' ) );
+		}
+
+		/**
+		 * Update existing episodes
+		 *
+		 * @since 3.2.0
+		 * @return void
+		 */
+		public static function update_existing_episodes() {
+
+			$autosync_existing_episodes = CFMH_Hosting_Settings::get_settings( 'autosync_existing_episodes', '1' );
+
+			if ( $autosync_existing_episodes !== '0' ) {
+				$current_shows = cfm_get_show_ids();
+
+				if ( !empty($current_shows) ) {
+					foreach ($current_shows as $show_id) {
+						try {
+							cfm_sync_episodes($show_id, array('update', 'delete'));
+						} catch (Exception $e) {
+							cfm_generate_log("AUTOSYNC-UPDATE-EPISODES ({$show_id})", $e->getMessage());
+							continue;
+						}
+					}
+				}
+			}
+
+		}
+
+		/**
+		 * Sync show info
+		 *
+		 * @since 3.2.0
+		 * @return void
+		 */
+		public static function sync_show_information() {
+
+			$autosync_show_information = CFMH_Hosting_Settings::get_settings( 'autosync_show_information', '1' );
+
+			if ( $autosync_show_information !== '0' ) {
+				$current_shows = cfm_get_show_ids();
+
+				if ( !empty($current_shows) ) {
+					foreach ($current_shows as $show_id) {
+						try {
+							cfm_sync_shows($show_id);
+						} catch (Exception $e) {
+							cfm_generate_log("AUTOSYNC-SHOWINFO ({$show_id})", $e->getMessage());
+							continue;
+						}
 					}
 				}
 			}

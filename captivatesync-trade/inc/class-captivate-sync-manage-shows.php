@@ -143,43 +143,37 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 		 */
 		public static function select_captivate_shows() {
 
-			if ( ! isset( $_POST['_nonce'] ) || ! wp_verify_nonce( $_POST['_nonce'], '_cfm_nonce' ) ) {
-				$output = 'Something went wrong! Please refresh the page and try again.';
+			$errors = array();
+			$output = array();
+			$success = array();
+			$output['return'] = false;
+
+			if ( !isset($_POST['_nonce']) || !wp_verify_nonce($_POST['_nonce'], '_cfm_nonce') ) {
+				$output['message'] = 'Something went wrong! Please refresh the page and try again.';
 			}
 			else {
-
 				$current_shows 	= cfm_get_show_ids();
-				$shows         	= isset( $_POST['shows'] ) ? wp_unslash( $_POST['shows'] ) : array();
-				$selected_shows	= array();
-				$show_authors	= isset( $_POST['authors'] ) ? wp_unslash( $_POST['authors'] ) : array();
+				$selected_shows = isset($_POST['shows']) ? array_map('sanitize_text_field', wp_unslash($_POST['shows'])) : array();
+				$show_authors = isset($_POST['authors']) ? array_map('sanitize_text_field', wp_unslash($_POST['authors'])) : array();
 
-				if ( is_array( $shows ) && ! empty( $shows ) ) {
-					foreach ( $shows as $id ) {
-						$selected_shows[] = sanitize_text_field( $id );
-					}
-				}
+				if ( ! empty($selected_shows) ) {
+					foreach ($selected_shows as $show_id) {
 
-				$to_remove = array_diff( $current_shows, $selected_shows );
-
-				update_option( 'cfm_sync_shows', json_encode( $selected_shows ) );
-				$errors           = array();
-				$output           = array();
-				$output['return'] = false;
-
-				if ( ! empty( $selected_shows ) ) {
-					foreach ( $selected_shows as $show_id ) {
-
-						if ( isset( $show_authors['author_for_show_' . $show_id] ) ) {
-							cfm_update_show_info( $show_id, 'wp_author_id', $show_authors['author_for_show_' . $show_id] );
+						if ( isset($show_authors['author_for_show_' . $show_id]) ) {
+							cfm_update_show_info($show_id, 'wp_author_id', $show_authors['author_for_show_' . $show_id]);
 						}
 
-						if ( in_array( $show_id, $current_shows ) ) {
-							cfm_sync_shows( $show_id );
-							cfm_sync_episodes( $show_id, array( 'all' ), array( 'all' ) );
+						if ( in_array($show_id, $current_shows) ) {
+							try {
+								cfm_sync_episodes($show_id, array('create'));
+							} catch (Exception $e) {
+								cfm_generate_log("SELECTEXISTINGSHOWS_CREATEPISODES ({$show_id})", $e->getMessage());
+								continue;
+							}
 						}
 						else {
 							$webhook            = array();
-							$webhook['webhook'] = get_site_url( null, '/wp-json/captivate-sync/v1/sync', null );
+							$webhook['webhook'] = get_site_url(null, '/wp-json/captivate-sync/v1/sync', null);
 
 							$sync_shows = wp_remote_request(
 								CFMH_API_URL . '/shows/' . $show_id . '/sync',
@@ -196,9 +190,9 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 							// Debugging.
 							cfm_generate_log( 'SYNC SELECT SHOWS', $sync_shows );
 
-							if ( ! is_wp_error( $sync_shows ) && 'Unauthorized' !== $sync_shows['body'] && is_array( $sync_shows ) ) {
+							if ( !is_wp_error($sync_shows) && 'Unauthorized' !== $sync_shows['body'] && is_array($sync_shows) ) {
 
-								$sync_shows = json_decode( $sync_shows['body'] );
+								$sync_shows = json_decode($sync_shows['body']);
 
 								$success[] = array(
 									'id'      => $show_id,
@@ -207,56 +201,38 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 								);
 
 								if ( $sync_shows->success ) {
-									cfm_sync_shows( $show_id, $sync_shows->sync_key );
-									cfm_sync_episodes( $show_id, array( 'all' ), array( 'all' ) );
+									cfm_sync_shows($show_id, $sync_shows->sync_key);
+									cfm_sync_episodes($show_id, array('create'));
 								}
-							} else {
+							}
+							else {
 								$errors = "Can't connect to Captivate Sync.";
 							}
 						}
+
+						cfm_sync_plugin_version($show_id);
 					}
 				}
 
-				if ( ! empty( $to_remove ) ) {
+				$to_remove = array_diff($current_shows, $selected_shows);
+
+				if ( !empty($to_remove) ) {
 					foreach ( $to_remove as $show_id ) {
-
-						$remove_shows = wp_remote_request(
-							CFMH_API_URL . '/shows/' . $show_id . '/sync',
-							array(
-								'timeout' => 500,
-								'method'  => 'DELETE',
-								'headers' => array(
-									'Authorization' => 'Bearer ' . get_transient( 'cfm_authentication_token' ),
-								),
-							)
-						);
-
-						// Debugging.
-						cfm_generate_log( 'SYNC REMOVE SHOWS', $remove_shows );
-
-						if ( ! is_wp_error( $remove_shows ) && 'Unauthorized' !== $remove_shows['body'] && is_array( $remove_shows ) ) {
-
-							$remove_shows = json_decode( $remove_shows['body'] );
-
-							if ( $remove_shows->success ) {
-								cfm_remove_show( $show_id );
-							}
-						} else {
-
-							$errors = "Can't connect to Captivate Sync.";
-
+						$disconnect_show = cfm_disconnect_captivate_show($show_id);
+						if ( $disconnect_show ) {
+							cfm_remove_show($show_id);
 						}
 					}
 				}
 
-				$output['return'] = $success;
-
+				if ( !empty($success) ) {
+					$output['return'] = $success;
+				}
 			}
 
-			echo json_encode( $output );
+			echo json_encode($output);
 
 			wp_die();
-
 		}
 
 		/**
@@ -266,25 +242,30 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 		 * @return void
 		 */
 		public static function sync_shows() {
-
 			$output = 'Something went wrong! Please refresh the page and try again.';
 
-			if ( isset( $_POST['_nonce'] ) && wp_verify_nonce( $_POST['_nonce'], '_cfm_nonce' ) ) {
-
+			if ( isset($_POST['_nonce']) && wp_verify_nonce($_POST['_nonce'], '_cfm_nonce') ) {
 				$current_shows = cfm_get_show_ids();
+				foreach ( $current_shows as $index => $show_id ) {
+					try {
+						$sync_shows = cfm_sync_shows($show_id);
+						cfm_sync_plugin_version($show_id);
+					} catch (Exception $e) {
+						cfm_generate_log("MANUALSYNC-SHOWINFO ({$show_id})", $e->getMessage());
+						continue;
+					}
 
-				foreach ( $current_shows as $show_id ) {
-					$sync_shows = cfm_sync_shows( $show_id );
-					$sync_episodes = cfm_sync_episodes( $show_id, array( 'all' ), array( 'all' ) );
+					try {
+						$sync_episodes = cfm_sync_episodes($show_id, array('all'));
+					} catch (Exception $e) {
+						cfm_generate_log("MANUALSYNC-EPISODES ({$show_id})", $e->getMessage());
+						continue;
+					}
 				}
-
 				$output = 'success';
 			}
-
 			echo $output;
-
 			wp_die();
-
 		}
 
 		/**
@@ -294,25 +275,18 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 		 * @return void
 		 */
 		public static function sync_show() {
-
 			$output = 'Something went wrong! Please refresh the page and try again.';
 
 			if ( isset( $_POST['_nonce'] ) && wp_verify_nonce( $_POST['_nonce'], '_cfm_nonce' ) ) {
-
 				$show_id = isset( $_POST['show_id'] ) ? sanitize_text_field( wp_unslash( $_POST['show_id'] ) ) : '';
-
-				if ( cfm_is_show_exists( $show_id ) ) {
-					$sync_shows = cfm_sync_shows( $show_id );
-					$sync_episodes = cfm_sync_episodes( $show_id, array( 'all' ), array( 'all' ) );
+				if ( cfm_is_show_exists($show_id) ) {
+					$sync_shows = cfm_sync_shows($show_id);
+					$sync_episodes = cfm_sync_episodes($show_id, array('all'));
 				}
-
 				$output = 'success';
 			}
-
 			echo $output;
-
 			wp_die();
-
 		}
 
 		/**
@@ -637,8 +611,7 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 						$output = 'already_exists';
 					}
 					else {
-						$cfm_general_settings = get_option( 'cfm_general_settings' );
-						$single_slug = ( isset( $cfm_general_settings['single_slug'] ) && '' != $cfm_general_settings['single_slug'] ) ? $cfm_general_settings['single_slug'] : 'captivate-podcast';
+						$single_slug = CFMH_Hosting_Settings::get_settings( 'single_slug', 'captivate-podcast' );
 
 						$sync_slug = ( $page_id != '0' ) ? get_bloginfo( 'url' ) . '/' . get_post_field( 'post_name', $page_id ) . '/' : get_bloginfo( 'url' ) . '/' . $single_slug . '/';
 						$index_page_info = array();
@@ -762,7 +735,7 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 								echo '<a class="btn btn-outline-primary btn-sm" href="' . esc_url( get_permalink( $index_page ) ) . '" target="_blank">View Podcast Page <i class="fal fa-eye ms-2"></i></a>';
 							}
 							?>
-							<a class="btn btn-outline-primary btn-sm" href="<?php echo esc_url( CFMH_CAPTIVATE_URL . '/dashboard/podcast/' . $show_id . '/settings' ); ?>" target="_blank">View Podcast in Captivate <i class="fal fa-external-link ms-2"></i></a>
+							<a class="btn btn-outline-primary btn-sm" href="<?php echo esc_url( CFMH_CAPTIVATE_URL . '/dashboard/podcast/' . $show_id . '/episodes' ); ?>" target="_blank">View Podcast in Captivate <i class="fal fa-external-link ms-2"></i></a>
 						</div>
 					</div>
 

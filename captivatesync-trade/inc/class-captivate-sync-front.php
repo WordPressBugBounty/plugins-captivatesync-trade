@@ -157,31 +157,39 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 		 * @param string $query  Query to search.
 		 * @return query_set
 		 */
-		public static function deactivate_episodes( $query ) {
+		public static function deactivate_episodes($query) {
+			if ( !is_admin() && $query->is_main_query() ) {
+				$modify_query = ($query->get('post_type') === 'captivate_podcast' && $query->is_singular()) ||
+								$query->is_post_type_archive('captivate_podcast') ||
+								$query->is_tax('captivate_category') ||
+								$query->is_tax('captivate_tag') ||
+								$query->is_search() ||
+								$query->is_home();
 
-			if ( ! is_admin() && $query->is_main_query() ) {
+				// If WooCommerce is active, exclude WooCommerce pages (shop and product pages)
+				if ( class_exists('WooCommerce') ) {
+					$modify_query = $modify_query && !is_shop() && !is_product();
+				}
 
-				if ( $query->is_singular() || $query->is_post_type_archive() || $query->is_archive() || is_tax() || $query->is_search() || $query->is_home() || $query->is_feed() ) {
-
-					$ids_array = array_unique( array_merge(
+				if ( $modify_query ) {
+					$ids_array = array_unique(array_merge(
 						cfm_get_inactive_episodes(),
 						cfm_get_private_episodes(),
-						cfm_get_episode_ids_by_status( array( 'Expired' ) ),
-						cfm_get_episode_ids_by_type( array( 'exclusive', 'early' ) )
-					) );
+						cfm_get_episode_ids_by_status(array('Exclusive', 'Early Access', 'Expired')),
+						cfm_get_episode_ids_by_type(array('exclusive', 'early'))
+					));
 
-					$query->set( 'post__not_in', $ids_array );
+					$query->set('post__not_in', $ids_array);
 				}
 			}
 		}
 		public static function deactivate_episodes_robots($robots) {
-
-			$ids_array = array_unique( array_merge(
+			$ids_array = array_unique(array_merge(
 				cfm_get_inactive_episodes(),
 				cfm_get_private_episodes(),
-				cfm_get_episode_ids_by_status(array('Expired')),
+				cfm_get_episode_ids_by_status(array('Exclusive', 'Early Access', 'Expired')),
 				cfm_get_episode_ids_by_type(array('exclusive', 'early'))
-			) );
+			));
 
 			if ( is_singular('captivate_podcast') && in_array(get_the_ID(), $ids_array) ) {
 				$robots['noindex']  = true;
@@ -243,22 +251,23 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 		 *
 		 * @since 3.0
 		 */
-		public static function title_filter( $title ) {
+		public static function title_filter($title, $post_id = null) {
 
-			global $post;
+			if ( $post_id ) {
 
-			if ( ! is_admin() && isset( $post ) && 'captivate_podcast' == get_post_type( $post->ID ) ) {
+				if ( ! is_admin() && 'captivate_podcast' === get_post_type( $post_id ) ) {
 
-				$cfm_general_settings = get_option( 'cfm_general_settings' );
-				$season_episode_number_enable = isset( $cfm_general_settings['season_episode_number_enable'] ) ? $cfm_general_settings['season_episode_number_enable'] : '';
+					$season_episode_number_enable = CFMH_Hosting_Settings::get_settings( 'season_episode_number_enable', '' );
 
-				// per show.
-				$cfm_show_id = get_post_meta( $post->ID, 'cfm_show_id', true );
-				$show_se_number_enable = cfm_get_show_info( $cfm_show_id, 'season_episode_number_enable' );
+					// per show.
+					$cfm_show_id = get_post_meta($post_id, 'cfm_show_id', true);
+					$show_se_number_enable = cfm_get_show_info( $cfm_show_id, 'season_episode_number_enable' );
 
-				// output.
-				if ( '1' == $show_se_number_enable || ( ( '1' != $show_se_number_enable && '0' != $show_se_number_enable ) && '1' == $season_episode_number_enable ) ) {
-					$title = cfm_get_se_num_format( $post->ID ) . $title;
+					// output.
+					if ( '1' == $show_se_number_enable || ( ( '1' != $show_se_number_enable && '0' != $show_se_number_enable ) && '1' == $season_episode_number_enable ) ) {
+						$title = cfm_get_se_num_format($post_id) . $title;
+					}
+
 				}
 			}
 
@@ -266,7 +275,31 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 		}
 
 		/**
-		 * Modify content output
+		 * Replace content with shownotes_rendered
+		 *
+		 * @since 3.2.0
+		 * @param string $content  Contents.
+		 * @return string
+		 */
+		public static function shownotes_rendered($content) {
+
+			if ( is_singular('captivate_podcast') ) {
+				$post_id   = get_the_ID();
+                $shownotes_rendered = get_post_meta( $post_id, 'cfm_episode_shownotes_rendered', true );
+
+				$captivate_shownotes_enable = CFMH_Hosting_Settings::get_settings( 'captivate_shownotes_enable', '' );
+
+				if ( !empty($shownotes_rendered) && '1' == $captivate_shownotes_enable ) {
+					$content = $shownotes_rendered;
+				}
+			}
+
+			return $content;
+		}
+
+
+		/**
+		 * Embed player to content and excerpt
 		 *
 		 * @since 1.0
 		 * @param string $content  Contents.
@@ -308,43 +341,47 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 
 			if ( is_singular( 'captivate_podcast' ) ) {
 
-                $post_id   = get_the_ID();
-                $transcript = get_post_meta( $post_id, 'cfm_episode_transcript', true );
+				$transcript_shownotes_enable = CFMH_Hosting_Settings::get_settings( 'transcript_shownotes_enable', '' );
 
-                if ( is_array( $transcript ) && ! empty( $transcript ) ) {
+				if ( $transcript_shownotes_enable !== '0' ) {
 
-                	if ( $transcript['transcription_text'] || $transcript['transcription_html'] ) {
+					$post_id   = get_the_ID();
+					$transcript = get_post_meta( $post_id, 'cfm_episode_transcript', true );
 
-	                    if ( $transcript['transcription_text'] ) {
-							$array_of_lines = preg_split( '/\r\n|\r|\n/', $transcript['transcription_text'] );
-	                        $transcript_content = '';
+					if ( is_array( $transcript ) && ! empty( $transcript ) ) {
 
-	                        foreach ( $array_of_lines as $line ) {
-	                            preg_match( '/([a-zA-Z\W]{1,15}[a-zA-Z\W]{0,15})([0-9]{0,2}:?[0-9]{2}:?[0-9][0-9][ ]*)/', $line, $output_array );
+						if ( $transcript['transcription_text'] || $transcript['transcription_html'] ) {
+							if ( $transcript['transcription_text'] ) {
+								$array_of_lines = preg_split( '/\r\n|\r|\n/', $transcript['transcription_text'] );
+								$transcript_content = '';
 
-	                            if ( $output_array ) {
-	                                $transcript_content .= '<cite>'. trim( $output_array[1] ) . ':</cite><time> ' . $output_array[2] . '</time>';
-	                            }
-	                            else {
-	                                $transcript_content .= '' != $line ? '<p>' . $line . '</p>' : '';
-	                            }
-	                        }
-	                    }
-						else {
-	                        $html = curl_init( $transcript['transcription_html'] );
-	                        curl_setopt( $html, CURLOPT_RETURNTRANSFER, TRUE );
-	                        curl_setopt( $html, CURLOPT_FOLLOWLOCATION, TRUE );
-	                        curl_setopt( $html, CURLOPT_AUTOREFERER, TRUE );
-	                        $transcript_content = curl_exec( $html );
-	                    }
+								foreach ( $array_of_lines as $line ) {
+									preg_match( '/([a-zA-Z\W]{1,15}[a-zA-Z\W]{0,15})([0-9]{0,2}:?[0-9]{2}:?[0-9][0-9][ ]*)/', $line, $output_array );
 
-	                    $output .= '<div class="cfm-transcript">';
-	                        $output .= '<h5 class="cfm-transcript-title">Transcript</h5>';
-	                        $output .= '<div class="cfm-transcript-content">' . $transcript_content . '</div>';
-	                    $output .= '</div>';
-	                }
+									if ( $output_array ) {
+										$transcript_content .= '<cite>'. trim( $output_array[1] ) . ':</cite><time> ' . $output_array[2] . '</time>';
+									}
+									else {
+										$transcript_content .= '' != $line ? '<p>' . $line . '</p>' : '';
+									}
+								}
+							}
+							else {
+								$html = curl_init( $transcript['transcription_html'] );
+								curl_setopt( $html, CURLOPT_RETURNTRANSFER, TRUE );
+								curl_setopt( $html, CURLOPT_FOLLOWLOCATION, TRUE );
+								curl_setopt( $html, CURLOPT_AUTOREFERER, TRUE );
+								$transcript_content = curl_exec( $html );
+							}
 
-                }
+							$output .= '<div class="cfm-transcript">';
+								$output .= '<h5 class="cfm-transcript-title">Transcript</h5>';
+								$output .= '<div class="cfm-transcript-content">' . $transcript_content . '</div>';
+							$output .= '</div>';
+						}
+
+					}
+				}
 
             }
 
@@ -385,28 +422,30 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 		 */
 		public static function content_auto_timestamp( $content ) {
 
-			$output = '';
+			$output = $content;
 
 			if ( is_singular( 'captivate_podcast' ) ) {
 
-				// auto-timestamp pattern.
-                $pattern = '/(?:[0-5]\d|2[0-3]):(?:[0-5]\d):?(?:[0-5]\d)?/';
+				$timestamp_shownotes_enable = CFMH_Hosting_Settings::get_settings( 'timestamp_shownotes_enable', '' );
 
-				$found_timestamp = preg_replace_callback(
-					$pattern,
-					function ($m) {
-						  return empty($m[1]) ? '<a href="javascript: void(0);" class="cp-timestamp" data-timestamp="'. $m[0] . '">'. $m[0] . '</a>' : $m[0];
-					},
-					$content
-				);
+				if ( $timestamp_shownotes_enable !== '0' ) {
 
-				if ( $found_timestamp ) {
-					$output = $found_timestamp;
+					// auto-timestamp pattern.
+					$pattern = '/(?:[0-5]\d|2[0-3]):(?:[0-5]\d):?(?:[0-5]\d)?/';
+
+					$found_timestamp = preg_replace_callback(
+						$pattern,
+						function ($m) {
+							return empty($m[1]) ? '<a href="javascript: void(0);" class="cp-timestamp" data-timestamp="'. $m[0] . '">'. $m[0] . '</a>' : $m[0];
+						},
+						$content
+					);
+
+					if ( $found_timestamp ) {
+						$output = $found_timestamp;
+					}
 				}
 
-			}
-			else {
-				$output .= $content;
 			}
 
 			return $output;
@@ -416,22 +455,19 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 		/**
 		 * Modify content output to translate dynamic text
 		 *
-		 * @since 1.0
+		 * @since 3.0
 		 * @param string $content  Contents.
 		 * @return string
 		 */
 		public static function content_dynamic_text( $content ) {
 
-			$output    = '';
+			$output    = $content;
 			$post_id   = get_the_ID();
 			$post_type = get_post_type( $post_id );
 			$cfm_show_id = get_post_meta( $post_id, 'cfm_show_id', true );
 
 			if ( 'captivate_podcast' == $post_type ) {
-				$output .= cfm_translate_dynamic_text( $cfm_show_id, $post_id, $content );
-			}
-			else {
-				$output .= $content;
+				$output = cfm_translate_dynamic_text( $cfm_show_id, $post_id, $content );
 			}
 
 			return $output;
@@ -441,8 +477,6 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 		 * Use artwork as featured image
 		 *
 		 * @since 3.0
-		 * @param string $content  Contents.
-		 * @return string
 		 */
 		public static function use_artwork( $image, $attachment_id, $size, $icon ) {
 
@@ -451,11 +485,13 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 			if ( ! is_admin() && 'captivate_podcast' == get_post_type( $post_id ) ) {
 
 				$cfm_show_id = get_post_meta( $post_id, 'cfm_show_id', true );
-				$cfm_episode_artwork = get_post_meta( $post_id, 'cfm_episode_artwork', true );
-				$cfm_episode_artwork = ( $cfm_episode_artwork ) ? $cfm_episode_artwork : cfm_get_show_artwork( $cfm_show_id, $size = 'full' );
 				$use_artwork = cfm_get_show_info( $cfm_show_id, 'use_artwork_as_featured_image' );
 
-				if ( '1' == $use_artwork ) {
+				if ( '1' == $use_artwork || ('if_empty' == $use_artwork && !has_post_thumbnail($post_id)) ) {
+					$cfm_episode_artwork = get_post_meta( $post_id, 'cfm_episode_artwork', true );
+					$cfm_episode_artwork = ( $cfm_episode_artwork ) ? $cfm_episode_artwork : cfm_get_show_artwork( $cfm_show_id, $size = 'full' );
+
+					$image = array();
 					$image[0] = $cfm_episode_artwork;
 					$image[1] = 1400;
 					$image[2] = 1400;
@@ -464,25 +500,24 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 
 			return $image;
 		}
-		public static function filter_has_post_thumbnail() {
+		public static function filter_has_post_thumbnail( $has_thumbnail, $post_id ) {
 
-			global $post;
-			$post_id = $post->ID;
-			$thumbnail_id  = get_post_thumbnail_id( $post );
-    		$has_thumbnail = (bool) $thumbnail_id;
+			if ( ! $post_id ) {
+				global $post;
+				$post_id = $post->ID;
+			}
 
-			if ( ! is_admin() && 'captivate_podcast' == get_post_type( $post_id ) ) {
+			if ( ! is_admin() && 'captivate_podcast' === get_post_type( $post_id ) ) {
 
 				$cfm_show_id = get_post_meta( $post_id, 'cfm_show_id', true );
-
 				$use_artwork = cfm_get_show_info( $cfm_show_id, 'use_artwork_as_featured_image' );
 
-				if ( '1' == $use_artwork || 'if_empty' == $use_artwork ) {
+				if ( '1' === $use_artwork || 'if_empty' === $use_artwork ) {
 					return true;
 				}
 			}
 
-			return ( $has_thumbnail ) ? true : false;
+			return $has_thumbnail;
 		}
 		public static function default_post_thumbnail_html( $html, $post_id, $post_thumbnail_id, $size, $attr ) {
 
@@ -536,34 +571,63 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 				$cfm_show_id 			= get_post_meta( $post_id, 'cfm_show_id', true );
 				$cfm_episode_id        	= get_post_meta( $post_id, 'cfm_episode_id', true );
 				$cfm_episode_title     	= get_the_title( $post_id );
-				$cfm_episode_shownotes 	= cfm_limit_characters( get_the_excerpt(), 140, '' );
-				$cfm_episode_content   	= cfm_limit_characters( get_the_excerpt(), 152, '' );
+				$cfm_episode_shownotes 	= cfm_limit_characters( get_the_excerpt(), 140, '...' );
+				$cfm_episode_content   	= cfm_limit_characters( get_the_excerpt(), 152, '...' );
 				$cfm_episode_artwork   	= get_post_meta( $post_id, 'cfm_episode_artwork', true );
 				$cfm_episode_artwork   	= ( $cfm_episode_artwork ) ? $cfm_episode_artwork : cfm_get_show_artwork( $cfm_show_id, $size = 'full' );
+				$post_thumbnail 		=  get_the_post_thumbnail_url( $post_id, 'medium' );
+				if ( !$post_thumbnail ) {
+					$thumbnail_html =  get_the_post_thumbnail( $post_id, 'medium' );
+					if (preg_match('/src="([^"]+)"/', $thumbnail_html, $matches)) {
+						$post_thumbnail = $matches[1];
+					}
+				}
 
-				$og_image 						= ( has_post_thumbnail( $post_id ) ) ? get_the_post_thumbnail_url( $post_id,  'full' ) : $cfm_episode_artwork;
+				$og_image 						= ( has_post_thumbnail( $post_id ) ) ? $post_thumbnail : $cfm_episode_artwork;
 				$cfm_episode_seo_title   		= get_post_meta( $post_id, 'cfm_episode_seo_title', true );
 				$cfm_episode_seo_description   	= get_post_meta( $post_id, 'cfm_episode_seo_description', true );
+				$og_title = $cfm_episode_seo_title ? $cfm_episode_seo_title : $cfm_episode_title;
+				$og_description = $cfm_episode_seo_description ? $cfm_episode_seo_description : $cfm_episode_content;
+				$og_description_x = $cfm_episode_seo_description ? $cfm_episode_seo_description : $cfm_episode_shownotes;
 
 				$cfm_episode_media_url = get_post_meta( $post_id, 'cfm_episode_media_url', true );
 
+				// custom social data.
+				$social_media_image_url = get_post_meta( $post_id, 'cfm_episode_social_media_image_url', true );
+				$social_media_title = get_post_meta( $post_id, 'cfm_episode_social_media_title', true );
+				$social_media_description = get_post_meta( $post_id, 'cfm_episode_social_media_description', true );
+
+				$x_image_url = get_post_meta( $post_id, 'cfm_episode_x_image_url', true );
+				$x_image_url = $x_image_url ? $x_image_url : $social_media_image_url;
+				$x_title = get_post_meta( $post_id, 'cfm_episode_x_title', true );
+				$x_title = $x_title ? $x_title : $social_media_title;
+				$x_description = get_post_meta( $post_id, 'cfm_episode_x_description', true );
+				$x_description = $x_description ? $x_description : $social_media_description;
+
 				// twitter data.
+				$final_x_title = $x_title ? $x_title : $og_title;
+				$final_x_description = $x_description ? $x_description : $og_description_x;
+				$final_x_image = $x_image_url ? $x_image_url : $og_image;
 				echo '	<meta property="twitter:card" content="player" />' . "\n";
 				echo '	<meta property="twitter:player" content="' . CFMH_PLAYER_URL . '/episode/' . esc_attr( $cfm_episode_id ) . '/twitter/">' . "\n";
 				echo '	<meta name="twitter:player:width" content="540">' . "\n";
 				echo '	<meta name="twitter:player:height" content="177">' . "\n";
-				echo '	<meta property="twitter:title" content="' . esc_attr( $cfm_episode_seo_title ? $cfm_episode_seo_title : $cfm_episode_title ) . '">' . "\n";
-				echo '	<meta property="twitter:description" content="' . esc_attr( $cfm_episode_seo_description ? $cfm_episode_seo_description : $cfm_episode_shownotes ) . '">' . "\n";
+				echo '	<meta property="twitter:title" content="' . esc_attr( $final_x_title ) . '">' . "\n";
+				echo '	<meta property="twitter:description" content="' . esc_attr( $final_x_description ) . '">' . "\n";
 				echo '	<meta property="twitter:site" content="@CaptivateAudio">' . "\n";
-				echo '	<meta property="twitter:image" content="' . esc_attr( $og_image ) . '" />' . "\n";
+				echo '	<meta property="twitter:image" content="' . esc_url( $final_x_image ) . '" />' . "\n";
 
 				// og data.
-				if ( $cfm_episode_seo_title || $cfm_episode_title ) {
-					echo '	<meta property="og:title" content="' . esc_attr( $cfm_episode_seo_title ? $cfm_episode_seo_title : $cfm_episode_title ) . '">' . "\n";
+				$final_og_title = $social_media_title ? $social_media_title : $og_title;
+				$final_og_description = $social_media_description ? $social_media_description : $og_description;
+				$final_og_image = $social_media_image_url ? $social_media_image_url : $og_image;
+
+				if ( $final_og_title ) {
+					echo '	<meta property="og:title" content="' . esc_attr( $final_og_title ) . '">' . "\n";
 				}
-				echo '	<meta property="og:description" content="' . esc_attr( $cfm_episode_seo_description ? $cfm_episode_seo_description : $cfm_episode_content . '...' ) . '">' . "\n";
-				echo '	<meta property="description" content="' . esc_attr( $cfm_episode_seo_description ? $cfm_episode_seo_description : $cfm_episode_content . '...' ) . '">' . "\n";
-				echo '	<meta property="og:image" content="' . esc_attr( $og_image ) . '" />' . "\n";
+				echo '	<meta property="og:description" content="' . esc_attr( $final_og_description ) . '">' . "\n";
+				echo '	<meta property="description" content="' . esc_attr( $final_og_description ) . '">' . "\n";
+				echo '<meta property="og:image" content="' . esc_url($final_og_image) . '" />' . "\n";
 
 				// og audio.
 				if ( $cfm_episode_media_url ) {

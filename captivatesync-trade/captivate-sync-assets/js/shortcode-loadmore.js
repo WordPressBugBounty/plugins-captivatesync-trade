@@ -1,7 +1,5 @@
 jQuery( document ).ready( function( $ ) {
 
-	//console.log('shortcode exists');
-
 	$(document).on('click', '.cfm-episodes-loadmore button', function(e) {
 		e.preventDefault();
 
@@ -15,6 +13,8 @@ jQuery( document ).ready( function( $ ) {
 		$current_page = $(this).attr('data-current-page');
 		$current_page++;
 
+		$button.prop('disabled', true).html('Loading...');
+
 		$.ajax({
 			url: cfmsync_front.ajaxurl,
 			type: 'post',
@@ -22,12 +22,9 @@ jQuery( document ).ready( function( $ ) {
 				action: 'shortcode-loadmore',
 				_nonce: cfmsync_front.ajaxnonce,
 				shortcode_id: $shortcode_id,
-				shortcode_atts: $shortcode_atts,
+				shortcode_atts: JSON.parse($shortcode_atts),
 				max_page: $max_page,
 				current_page: $current_page
-			},
-			beforeSend : function() {
-				$button.html('Loading...');
 			},
 			success: function(response) {
 
@@ -35,10 +32,10 @@ jQuery( document ).ready( function( $ ) {
 					$button.remove();
 				}
 				else if ( 'nothing_found' == response ) {
-					console.log('nothing_found');
+					//console.log('nothing_found');
 				}
 				else {
-					$button.html($button_html);
+					$button.prop('disabled', false).html($button_html);
 					$('#cfm-episodes-' + $shortcode_id).append(response);
 
 					$button.attr('data-current-page', $current_page);

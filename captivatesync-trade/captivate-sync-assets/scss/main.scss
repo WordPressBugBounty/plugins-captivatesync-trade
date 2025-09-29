@@ -447,9 +447,6 @@
     }
 
     // ACF fields
-    .modal-body-acf {
-        max-height: 75%;
-    }
     .cfm-field-groups {
 
         .acf-field-group-name {
@@ -753,12 +750,31 @@
 
         &.fake-dropzone {
 
+            .fd-wrap {
+                display: flex;
+                align-items: center;
+                max-width: 100%;
+            }
+            .fd-col-image {
+                width: 120px;
+                height: 120px;
+                flex: 0 0 auto;
+                overflow: hidden;
+            }
+            .fd-col-browse {
+                justify-content: flex-start;
+                flex: 0 0 calc(100% - 140px);
+                flex-direction: column;
+                margin-left: 20px;
+            }
+
             .dropzone {
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 text-align: center;
                 cursor: pointer;
+                min-height: 120px;
             }
             .fd-result {
                 background: #eff3fa;
@@ -812,7 +828,7 @@
         }
     }
     .ql-container {
-        height: 340px !important;
+        height: 340px;
         border: 1px solid $secondary-text-color;
         border-radius: 3px;
         border-top-right-radius: 0;
@@ -946,6 +962,32 @@
                     overflow-y: auto;
                     overflow-x: hidden;
                     flex: none;
+                    max-height: 75%;
+                }
+            }
+
+            .cfm-modal-field-group-name {
+                font-weight: 500;
+                font-size: 18px;
+            }
+            .cfm-modal-field {
+                label {
+                    display: block;
+                }
+                > input:not([type="checkbox"]):not([type="range"]),
+                > textarea {
+                    width: 100%;
+                }
+
+                .fd-col-image {
+                    width: 80px;
+                    height: 80px;
+                }
+                .dropzone {
+                    min-height: 80px;
+                    .dz-default {
+                        padding: 0;
+                    }
                 }
             }
         }

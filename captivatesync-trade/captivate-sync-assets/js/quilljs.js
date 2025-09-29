@@ -90,14 +90,26 @@
 			if ( render_count > 1 ) {
 				is_text_changed = true;
 			}
-			quill.history.ignoreChange = false;
+			//quill.history.ignoreChange = false;
 		});
 
-		quill.root.addEventListener('blur', function () {
-			if ( is_text_changed === true ) {
-				quill.history.ignoreChange = true;
-				$(document).renderVariables();
-				is_text_changed = false;
+		// Trigger blur-like behavior when the click is outside the editor.
+		$(document).on('mousedown touchstart', function(event) {
+			if ( !$(event.target).closest('.cfm-captivate-editor').length ) {
+				if ( is_text_changed ) {
+					$(document).renderVariables();
+				}
+			}
+		});
+
+		// Expand editor.
+		$('.cfm-captivate-editor .expand').click(function() {
+			if ($(quill_container).height() === 640) {
+				$(quill_container).height(340);
+				$(this).html('Expand Writing Area <i class="fa-regular ms-1 fa-expand"></i>');
+			} else {
+				$(quill_container).height(640);
+				$(this).html('Reduce Writing Area <i class="fa-regular ms-1 fa-arrows-minimize"></i>');
 			}
 		});
 
@@ -364,7 +376,6 @@
 			data_reference = $this.attr('data-reference'),
 			quill_selection = quill.selection.savedRange.index;
 
-			//console.log(data_reference);
 			quill.insertEmbed(quill_selection, 'variable', data_reference);
 			quill.insertEmbed(quill_selection+1, 'variable', 'd-condition-end');
 			$('dt-variable').contents().unwrap();

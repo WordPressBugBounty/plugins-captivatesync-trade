@@ -134,8 +134,6 @@ $(document).ready(function($) {
 		var $this = $(this),
 			show_id = $this.attr('data-reference');
 
-			console.log('aaa');
-
 		$('#cfm-save-show-settings').attr('data-reference', show_id);
 
 		$.ajax({

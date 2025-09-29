@@ -42,9 +42,9 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 			if ( in_array( $current_screen->id, $publish_episode_screens ) ) :
 
 				wp_enqueue_media();
-				wp_enqueue_script( 'quilljs', CFMH_URL . 'vendor/quill/quill.min.js', array(), '1.3.6' );
-				wp_enqueue_style( 'quilljs', CFMH_URL . 'vendor/quill/quill.snow.css', array(), '1.3.62' );
-				wp_enqueue_script( 'quilljs-script', CFMH_URL . 'captivate-sync-assets/js/dist/quilljs-min.js', array(), '1.3.6' );
+				wp_enqueue_script( 'quilljs', CFMH_URL . 'vendor/quill/quill.min.js', array(), '1.3.7' );
+				wp_enqueue_style( 'quilljs', CFMH_URL . 'vendor/quill/quill.snow.css', array(), '2.0.0' );
+				wp_enqueue_script( 'quilljs-script', CFMH_URL . 'captivate-sync-assets/js/dist/quilljs-min.js', array(), '1.3.7' );
 
 				wp_enqueue_style( 'jquery-ui-theme', CFMH_URL . 'vendor/jquery-ui/jquery-ui.min.css', array(), '1.12.1' );
 				wp_enqueue_script( 'jquery-ui-datepicker' );
@@ -106,7 +106,7 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 					$itunes_title = ( isset( $_POST['post_title_check'] ) && isset( $_POST['itunes_title'] ) ) ? sanitize_text_field( wp_unslash( $_POST['itunes_title'] ) ) : '';
 					$enable_wordpress_editor = isset( $_POST['enable_wordpress_editor'] ) ? sanitize_text_field( wp_unslash( $_POST['enable_wordpress_editor'] ) ) : 'off';
 					$shownotes = $enable_wordpress_editor == 'on' ? wp_filter_post_kses( $_POST['post_content_wp'] ) : wp_filter_post_kses( $_POST['post_content'] );
-					$shownotes =wp_unslash( $shownotes );
+					$shownotes = wp_unslash( $shownotes );
 
 					// required fields if they pass the Js validation for some reason.
 					if ( '' == $post_title ) {
@@ -125,7 +125,7 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 						'post_title'   => sanitize_text_field( wp_unslash( $post_title ) ),
 						'post_content' => $shownotes,
 						'post_author'  => (int) $post_author,
-						'post_excerpt'  => wp_unslash( wp_filter_kses( $_POST['post_excerpt'] ) ),
+						'post_excerpt'  => sanitize_textarea_field(wp_unslash($_POST['post_excerpt'])),
 						'post_type'    => 'captivate_podcast',
 					);
 
@@ -272,15 +272,15 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 						$episode_info['episode_art'] = $uploaded_artwork;
 
 						// Featured image.
-						if ( isset( $_POST['featured_image'] ) && '' != $_POST['featured_image'] ) {
-							$image_id = sanitize_text_field( wp_unslash( $_POST['featured_image'] ) );
+						if ( isset( $_POST['featured_image_id'] ) && '' != $_POST['featured_image_id'] ) {
+							$image_id = sanitize_text_field( wp_unslash( $_POST['featured_image_id'] ) );
 
 							// set as featured image.
 							update_post_meta( $post_id, '_thumbnail_id', $image_id );
 						}
 
 						// remove featured image.
-						if ( '0' == $_POST['featured_image'] ) {
+						if ( '0' == $_POST['featured_image_id'] ) {
 							delete_post_meta( $post_id, '_thumbnail_id' );
 						}
 
@@ -358,22 +358,58 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 							update_post_meta( $post_id, 'cfm_episode_media_users_id', sanitize_text_field( wp_unslash( $_POST['media_users_id'] ) ) );
 						}
 
+						// cfm_episode_status
+						if ( !in_array( $episode_status, array( 'Exclusive', 'Early Access', 'Expired' ) ) ) {
+							$post_status = get_post_status($post_id);
+							switch ( $post_status ) {
+								case 'publish':
+									$cfm_episode_status = 'Published';
+									break;
+								case 'future':
+									$cfm_episode_status = 'Scheduled';
+									break;
+								case 'draft':
+									$cfm_episode_status = 'Draft';
+									break;
+								default:
+									$cfm_episode_status = $episode_status;
+									break;
+							}
+							update_post_meta($post_id, 'cfm_episode_status', $cfm_episode_status);
+						}
+
+						// cfm_episode_website_active
+						$cfm_episode_website_active = get_post_meta($post_id, 'cfm_episode_website_active', true);
+						if ( empty($cfm_episode_website_active) && $cfm_episode_website_active !== '0' ) {
+							update_post_meta( $post_id, 'cfm_episode_website_active', '1' );
+						}
+
+						// episode_private
+						$cfm_episode_private = get_post_meta($post_id, 'cfm_episode_private', true);
+						if ( empty($cfm_episode_private) && $cfm_episode_private !== '1' ) {
+							update_post_meta( $post_id, 'cfm_episode_private', '0' );
+						}
+
 						// Transcript.
-						if ( isset( $_FILES['transcript_file'] ) && $_FILES['transcript_file']['size'] != 0 ) {
+						if ( (isset( $_POST['transcript_updated'] ) && '1' == $_POST['transcript_updated']) || isset( $_POST['transcript_current'] ) ) {
+							if ( isset( $_FILES['transcript_file'] ) && $_FILES['transcript_file']['size'] != 0 ) {
 
-							$transcript_allowed = array( 'srt' );
-							$transcript_filename = $_FILES['transcript_file']['name'];
-							$transcript_ext = pathinfo( $transcript_filename, PATHINFO_EXTENSION );
+								$transcript_allowed = array( 'srt' );
+								$transcript_filename = $_FILES['transcript_file']['name'];
+								$transcript_ext = pathinfo( $transcript_filename, PATHINFO_EXTENSION );
 
-							if ( ! in_array( $transcript_ext, $transcript_allowed ) ) {
-							    $transcript = array();
+								if ( ! in_array( $transcript_ext, $transcript_allowed ) ) {
+									$transcript = array();
+								}
+								else {
+									$transcript = $_FILES['transcript_file'];
+								}
 							}
 							else {
-								$transcript = $_FILES['transcript_file'];
+								if ( isset( $_POST['transcript_text'] ) ) {
+								    $transcript = wp_unslash( wp_filter_kses( $_POST['transcript_text'] ) );
+							    }
 							}
-						}
-						else {
-							$transcript = wp_unslash( wp_filter_kses( $_POST['transcript_text'] ) );
 						}
 
 						// Custom field.
@@ -420,13 +456,24 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 
 						}
 
+						// Social Media
+						update_post_meta( $post_id, 'cfm_episode_social_media_image_id', sanitize_text_field(wp_unslash($_POST['social_media_image_id'])));
+						update_post_meta( $post_id, 'cfm_episode_social_media_image_url', sanitize_url($_POST['social_media_image_url']));
+						update_post_meta( $post_id, 'cfm_episode_social_media_title', sanitize_text_field(wp_unslash($_POST['social_media_title'])));
+						update_post_meta( $post_id, 'cfm_episode_social_media_description', sanitize_text_field(wp_unslash($_POST['social_media_description'])));
+
+						update_post_meta( $post_id, 'cfm_episode_x_image_id', sanitize_text_field(wp_unslash($_POST['x_image_id'])));
+						update_post_meta( $post_id, 'cfm_episode_x_image_url', sanitize_url($_POST['x_image_url']));
+						update_post_meta( $post_id, 'cfm_episode_x_title', sanitize_text_field(wp_unslash($_POST['x_title'])));
+						update_post_meta( $post_id, 'cfm_episode_x_description', sanitize_text_field(wp_unslash($_POST['x_description'])));
 
 						$episode_info['title']     		= $post_title;
-						$episode_info['shownotes'] 		= $shownotes;
+						$episode_info['shownotes'] 		= cfm_trim_lists_for_quill($shownotes);
 						$episode_info['date']      		= date( 'Y/m/d H:i:s', strtotime( $post_datetime ) );
 						$episode_info['via_sync']  		= true;
 						$episode_info['amie_status']    = 'processing';
 						$episode_info['captivate_episode_type'] = $captivate_episode_type;
+						$episode_info['episode_private'] = (int) $cfm_episode_private;
 
 						// Make sure that exclusive, expired, and early access episodes stays the same on update.
 						if ( in_array( $episode_status, array( 'Exclusive', 'Early Access', 'Expired' ) ) || $exclusivity_date || $early_access_end_date ) {
@@ -480,6 +527,14 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 									if ( isset( $_POST['transcript_updated'] ) && '1' == $_POST['transcript_updated'] ) {
 										$update_transcript = cfm_update_transcript( $transcript, $cfm_episode_id );
 										update_post_meta( $post_id, 'cfm_episode_transcript', $update_transcript );
+									}
+
+									// Rendered shownotes.
+									$get_updated_captivate_episode = cfm_get_captivate_episode($cfm_episode_id);
+									if ( $get_updated_captivate_episode ) {
+										$captivate_episode_data = cfm_episodes_data_array( $get_updated_captivate_episode, $cfm_episode_id );
+										$captivate_episode_shownotes_rendered = $captivate_episode_data['shownotes_rendered'];
+										update_post_meta($post_id, 'cfm_episode_shownotes_rendered', $captivate_episode_shownotes_rendered);
 									}
 
 									wp_redirect( admin_url( "admin.php?page=cfm-hosting-edit-episode&show_id={$show_id}&eid={$post_id}&response=3" ) );
@@ -716,6 +771,7 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 
 									AND meta_key <> 'cfm_episode_id'
 									AND meta_key <> 'cfm_episode_status'
+									AND meta_key <> 'cfm_episode_amie_status'
 
 									AND meta_key <> 'cfm_episode_media_created_at'
 									AND meta_key <> 'cfm_episode_media_id'

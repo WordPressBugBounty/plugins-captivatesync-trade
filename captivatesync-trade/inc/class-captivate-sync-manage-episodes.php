@@ -176,7 +176,7 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Episodes' ) ) :
 
 						$captivate_episode = cfm_get_captivate_episode( $cfm_episode_id );
 
-						if ( ! empty( $captivate_episode ) && 'api_error' != $captivate_episode ) {
+						if ( $captivate_episode ) {
 
 							$captivate_episode_data = cfm_episodes_data_array( $captivate_episode, $cfm_episode_id );
 							$captivate_slug = $captivate_episode_data['slug'];
@@ -220,11 +220,13 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Episodes' ) ) :
 									cfm_generate_log( 'CAPTIVATE DELETE EPISODE', $remove_episode );
 
 									// trash episode in WordPress once deleted in Captivate.
-									if ( ! is_wp_error( $remove_episode ) && 'Unauthorized' != $remove_shows['body'] && is_array( $remove_episode ) ) {
+									if ( !is_wp_error($remove_episode) ) {
+										$response_data = json_decode(wp_remote_retrieve_body($remove_episode));
 
-										wp_trash_post( $pid );
-										$output = 'success';
-
+										if ( isset( $response_data->success ) && $response_data->success === true ) {
+											wp_trash_post( $pid );
+											$output = 'success';
+										}
 									}
 								}
 

@@ -41,7 +41,7 @@ $(document).ready(function($) {
 				authors: showAuthors,
 				_nonce: cfmsync.ajaxnonce
 			},
-			beforeSend: function( response ) {
+			beforeSend: function() {
 
 				$("#cfm-captivate-shows > li input").prop('disabled', true);
 
@@ -49,7 +49,7 @@ $(document).ready(function($) {
 				$this.html('<i class="fas fa-spinner fa-spin me-2"></i> Syncing podcasts and episodes...');
 
 			},
-			success: function( response ) {
+			success: function(response) {
 
 				var syncResponse = JSON.parse(response);
 

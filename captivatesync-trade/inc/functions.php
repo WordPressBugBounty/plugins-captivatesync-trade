@@ -241,6 +241,8 @@ if ( ! function_exists( 'cfm_get_captivate_episodes' ) ) :
 	 */
     function cfm_get_captivate_episodes( $show_id ) {
 
+		if ( ! $show_id ) return false;
+
         $response = wp_remote_get(
             CFMH_API_URL . '/shows/' . $show_id . '/episodes',
             array(
@@ -268,6 +270,9 @@ if ( ! function_exists( 'cfm_get_captivate_episode' ) ) :
 	 * @return array | string
 	 */
     function cfm_get_captivate_episode( $episode_id ) {
+
+		if ( ! $episode_id ) return false;
+
 		$response = wp_remote_get( CFMH_API_URL . '/episodes/' . $episode_id, array(
 			'timeout' => 500,
 			'headers' => array(
@@ -276,10 +281,29 @@ if ( ! function_exists( 'cfm_get_captivate_episode' ) ) :
 		));
 
 		// Debugging.
-		cfm_generate_log( 'GET CAPTIVATE EPISODE', $response );
+		cfm_generate_log('GET CAPTIVATE EPISODE', $response);
 
-		return ! is_wp_error( $response ) && 'Unauthorized' != $response['body'] && is_array( $response ) ? json_decode( $response['body'] )->episode : 'api_error';
-    }
+		if ( !is_wp_error($response) ) {
+			$response_data = json_decode(wp_remote_retrieve_body($response));
+			return isset($response_data->episode) ? $response_data->episode : false;
+		}
+
+		return false;
+	}
+endif;
+
+if ( ! function_exists( 'cfm_extract_available_props' ) ) :
+function cfm_extract_available_props( $source, $map ) {
+	$result = array();
+
+	foreach ( $map as $key => $property ) {
+		if ( isset( $source->$property ) ) {
+			$result[ $key ] = $source->$property;
+		}
+	}
+
+	return $result;
+}
 endif;
 
 if ( ! function_exists( 'cfm_episodes_data_array' ) ) :
@@ -292,120 +316,72 @@ if ( ! function_exists( 'cfm_episodes_data_array' ) ) :
 	 *
 	 * @return array
 	 */
-	function cfm_episodes_data_array( $data, $episode_id = false ) {
+	function cfm_episodes_data_array($data, $episode_id = false) {
 
 		$captivate_episodes_data = array();
 
-		if ( ! empty( $data ) ) {
+		if ( ! empty($data) ) {
+			$map = array(
+				'id'                         => 'id',
+				'shows_id'                   => 'shows_id',
+				'media_id'                   => 'media_id',
+				'title'                      => 'title',
+				'itunes_title'               => 'itunes_title',
+				'published_date'             => 'published_date',
+				'status'                     => 'status',
+				'episode_art'                => 'episode_art',
+				'shownotes'                  => 'shownotes',
+				'episode_type'               => 'episode_type',
+				'episode_season'             => 'episode_season',
+				'episode_number'             => 'episode_number',
+				'author'                     => 'author',
+				'link'                       => 'link',
+				'explicit'                   => 'explicit',
+				'itunes_block'               => 'itunes_block',
+				'google_block'               => 'google_block',
+				'google_description'         => 'google_description',
+				'donation_link'              => 'donation_link',
+				'donation_text'              => 'donation_text',
+				'website_title'              => 'website_title',
+				'slug'                       => 'slug',
+				'seo_title'                  => 'seo_title',
+				'seo_description'            => 'seo_description',
+				'episode_private'            => 'episode_private',
+				'episode_expiration'         => 'episode_expiration',
+				'transcription_html'         => 'transcription_html',
+				'transcription_file'         => 'transcription_file',
+				'transcription_json'         => 'transcription_json',
+				'transcription_text'         => 'transcription_text',
+				'idea_title'                 => 'idea_title',
+				'idea_summary'               => 'idea_summary',
+				'idea_notes'                 => 'idea_notes',
+				'idea_created_at'            => 'idea_created_at',
+				'media_url'                  => 'media_url',
+				'amie_status'                => 'amie_status',
+				'idea_production_notes'      => 'idea_production_notes',
+				'early_access_end_date'      => 'early_access_end_date',
+				'captivate_episode_type'     => 'captivate_episode_type',
+				'exclusivity_date'           => 'exclusivity_date',
+				'shownotes_rendered'         => 'shownotes_rendered'
+			);
+
 			if ( $episode_id ) {
-				$captivate_episodes_data = array(
-					'id' 						=> $episode_id,
-					'shows_id' 					=> $data->shows_id,
-					'media_id' 					=> $data->media_id,
-					'title' 					=> $data->title,
-					'itunes_title' 				=> $data->itunes_title,
-					'published_date' 			=> $data->published_date,
-					'status' 					=> $data->status,
-					'episode_art' 				=> $data->episode_art,
-					'shownotes' 				=> $data->shownotes,
-					'episode_type' 				=> $data->episode_type,
-					'episode_season' 			=> $data->episode_season,
-					'episode_number' 			=> $data->episode_number,
-					'author' 					=> $data->author,
-					'link' 						=> $data->link,
-					'explicit' 					=> $data->explicit,
-					'itunes_block' 				=> $data->itunes_block,
-					'google_block' 				=> $data->google_block,
-					'google_description' 		=> $data->google_description,
-					'donation_link' 			=> $data->donation_link,
-					'donation_text' 			=> $data->donation_text,
-					'website_title' 			=> $data->website_title,
-					'slug'				 		=> $data->slug,
-					'seo_title'			 		=> $data->seo_title,
-					'seo_description'    		=> $data->seo_description,
-					'episode_private'    		=> $data->episode_private,
-					'episode_expiration'    	=> $data->episode_expiration,
-					'transcription_html'    	=> $data->transcription_html,
-					'transcription_file'    	=> $data->transcription_file,
-					'transcription_json'    	=> $data->transcription_json,
-					'transcription_text'    	=> $data->transcription_text,
-					'idea_title'    			=> $data->idea_title,
-					'idea_summary'    			=> $data->idea_summary,
-					'idea_notes'    			=> $data->idea_notes,
-					'idea_created_at'    		=> $data->idea_created_at,
-					'media_name' 				=> $data->media_name,
-					'media_size' 				=> $data->media_size,
-					'media_bit_rate' 			=> $data->media_bit_rate,
-					'media_id3_size' 			=> $data->media_id3_size,
-					'media_type' 				=> $data->media_type,
-					'media_url' 				=> $data->media_url,
-					'media_duration' 			=> $data->media_duration,
-					'amie_status' 				=> $data->amie_status,
-					'idea_production_notes' 	=> $data->idea_production_notes,
-					'early_access_end_date' 	=> $data->early_access_end_date,
-					'captivate_episode_type' 	=> $data->captivate_episode_type,
-					'exclusivity_date' 			=> $data->exclusivity_date
-				);
-			}
-			else {
-
+				// Single episode - https://api.captivate.fm/episodes/:id
+				$episode_data = cfm_extract_available_props( $data, $map );
+				$episode_data['id'] = $episode_id; // force ID
+				$captivate_episodes_data = $episode_data;
+			} else {
+				// List of episodes - https://api.captivate.fm/shows/:id/episodes
 				foreach ( $data as $captivate_episode ) {
-					$episode_id = $captivate_episode->id ? $captivate_episode->id : $capitvate_episode->episodes_id;
-					$captivate_episodes_data[$episode_id] = array(
-						'id'                 	=> $episode_id,
-						'shows_id'           	=> $captivate_episode->shows_id,
-						'media_id'           	=> $captivate_episode->media_id,
-						'title'              	=> $captivate_episode->title,
-						'itunes_title'       	=> $captivate_episode->itunes_title,
-						'published_date'     	=> $captivate_episode->published_date,
-						'status'             	=> $captivate_episode->status,
-						'episode_art'        	=> $captivate_episode->episode_art,
-						'shownotes'          	=> $captivate_episode->shownotes,
-						'episode_type'       	=> $captivate_episode->episode_type,
-						'episode_season'     	=> $captivate_episode->episode_season,
-						'episode_number'     	=> $captivate_episode->episode_number,
-						'author'             	=> $captivate_episode->author,
-						'link'               	=> $captivate_episode->link,
-						'explicit'           	=> $captivate_episode->explicit,
-						'itunes_block'       	=> $captivate_episode->itunes_block,
-						'google_block'       	=> $captivate_episode->google_block,
-						'google_description' 	=> $captivate_episode->google_description,
-						'donation_link'      	=> $captivate_episode->donation_link,
-						'donation_text'      	=> $captivate_episode->donation_text,
-						'website_title'      	=> $captivate_episode->website_title,
-						'slug'				 	=> $captivate_episode->slug,
-						'seo_title'			 	=> $captivate_episode->seo_title,
-						'seo_description'    	=> $captivate_episode->seo_description,
-						'episode_private'    	=> $captivate_episode->episode_private,
-						'episode_expiration'    => $captivate_episode->episode_expiration,
-						'transcription_html'    => $captivate_episode->transcription_html,
-						'transcription_file'    => $captivate_episode->transcription_file,
-						'transcription_json'    => $captivate_episode->transcription_json,
-						'transcription_text'    => $captivate_episode->transcription_text,
-						'idea_title'    		=> $captivate_episode->idea_title,
-						'idea_summary'    		=> $captivate_episode->idea_summary,
-						'idea_notes'    		=> $captivate_episode->idea_notes,
-						'idea_created_at'    	=> $captivate_episode->idea_created_at,
-						'media_name' 			=> $captivate_episode->media_name,
-						'media_size' 			=> $captivate_episode->media_size,
-						'media_bit_rate' 		=> $captivate_episode->media_bit_rate,
-						'media_id3_size' 		=> $captivate_episode->media_id3_size,
-						'media_type' 			=> $captivate_episode->media_type,
-						'media_url' 			=> $captivate_episode->media_url,
-						'media_duration' 		=> $captivate_episode->media_duration,
-						'amie_status' 			=> $captivate_episode->amie_status,
-						'idea_production_notes' => $captivate_episode->idea_production_notes,
-						'early_access_end_date' => $captivate_episode->early_access_end_date,
-						'captivate_episode_type' => $captivate_episode->captivate_episode_type,
-						'exclusivity_date' 		=> $captivate_episode->exclusivity_date
-					);
+					$episode_id = isset( $captivate_episode->id ) ? $captivate_episode->id : $captivate_episode->episodes_id;
+					$episode_data = cfm_extract_available_props( $captivate_episode, $map );
+					$episode_data['id'] = $episode_id; // ensure ID is included
+					$captivate_episodes_data[ $episode_id ] = $episode_data;
 				}
-
 			}
 		}
 
 		return $captivate_episodes_data;
-
     }
 endif;
 
@@ -568,8 +544,7 @@ if ( ! function_exists( 'cfm_get_show_page' ) ) :
 
 		$shows    = cfm_get_shows();
 		$show_ids = array();
-		$cfm_general_settings = get_option( 'cfm_general_settings' );
-		$single_slug = ( isset( $cfm_general_settings['single_slug'] ) && '' != $cfm_general_settings['single_slug'] ) ? $cfm_general_settings['single_slug'] : 'captivate-podcast';
+		$single_slug = CFMH_Hosting_Settings::get_settings( 'single_slug', 'captivate-podcast' );
 
 		if ( ! empty( $shows ) ) {
 			foreach ( $shows as $show ) {
@@ -759,9 +734,18 @@ if ( ! function_exists( 'cfm_get_show_info' ) ) :
 		global $wpdb;
 		$table_name = $wpdb->prefix . 'cfm_shows';
 
-		$row = $wpdb->get_row( $wpdb->prepare( "SELECT cfm_value FROM $table_name WHERE show_id = %s AND cfm_option = %s", $show_id, $option ) );
+		$cache_key = "cfm_show_info_{$show_id}_{$option}";
+		$cached_value = wp_cache_get($cache_key, 'cfm_show_info');
 
-		return ! empty( $row ) ? $row->cfm_value : '';
+		if ( false === $cached_value ) {
+
+			$row = $wpdb->get_row($wpdb->prepare( "SELECT cfm_value FROM $table_name WHERE show_id = %s AND cfm_option = %s", $show_id, $option));
+
+			$cached_value = ! empty($row) ? $row->cfm_value : '';
+			wp_cache_set($cache_key, $cached_value, 'cfm_show_info', 3600); // Cache for 1 hour
+		}
+
+		return $cached_value;
 	}
 endif;
 
@@ -852,7 +836,7 @@ if ( ! function_exists( 'cfm_upload_file' ) ) :
 	}
 endif;
 
-if ( ! function_exists( 'cfm_remove_show' ) ) :
+if ( ! function_exists('cfm_remove_show') ) :
 	/**
 	 * Hopefully we don't need this one, remove show.
 	 *
@@ -861,15 +845,13 @@ if ( ! function_exists( 'cfm_remove_show' ) ) :
 	 *
 	 * @return void
 	 */
-	function cfm_remove_show( $show_id ) {
+	function cfm_remove_show($show_id) {
 
-		cfm_remove_show_info( $show_id );
+		cfm_remove_show_info($show_id);
 
-		// get WP episodes.
-		$get_episodes = array(
+		$episodes = get_posts(array(
 			'post_type'      => 'captivate_podcast',
 			'posts_per_page' => -1,
-			'order'          => 'DESC',
 			'post_status'    => array( 'publish', 'draft', 'future', 'private' ),
 			'meta_query'     => array(
 				array(
@@ -878,19 +860,13 @@ if ( ! function_exists( 'cfm_remove_show' ) ) :
 					'compare' => '=',
 				),
 			),
-		);
+		));
 
-		$episodes = new WP_Query( $get_episodes );
-
-		if ( $episodes->have_posts() ) :
-
-			while ( $episodes->have_posts() ) :
-				$episodes->the_post();
-				wp_delete_post( get_the_ID(), false );
-			endwhile;
-
-		endif;
-
+		if ( !empty($episodes) ) {
+			foreach ($episodes as $episode) {
+				wp_delete_post($episode->ID, false);
+			}
+		}
 	}
 endif;
 
@@ -1012,6 +988,128 @@ if ( ! function_exists( 'cfm_sync_shows' ) ) :
 
 endif;
 
+if ( ! function_exists( 'cfm_get_episode_status' ) ) :
+    /**
+	 * Get post status based on Captivate status
+	 *
+	 * @since 3.1.0
+	 * @param string $captivate_status  Captivate episode status
+	 */
+	function cfm_get_episode_status( $captivate_status ) {
+		$status_map = array(
+			'Published'      => 'publish',
+			'Scheduled'      => 'future',
+			'Expired'        => 'publish',
+			'Exclusive'      => 'publish',
+			'Early Access'   => 'publish',
+			'Default'        => 'draft'
+		);
+
+		return isset( $status_map[ $captivate_status ] ) ? $status_map[ $captivate_status ] : 'draft';
+	}
+endif;
+
+if ( ! function_exists( 'cfm_update_episode_meta' ) ) :
+    /**
+	 * Update episode post meta data
+	 *
+	 * @since 3.1.0
+	 * @param int  $post_id  post ID.
+	 * @param array $episode_data Captivate episode data
+	 */
+	function cfm_update_episode_meta($post_id, $episode_data) {
+
+		$meta_map = array(
+			'cfm_episode_status'               		=> 'status',
+			'cfm_show_id'                      		=> 'shows_id',
+			'cfm_episode_id'                   		=> 'id',
+			'cfm_episode_media_id'            		=> 'media_id',
+			'cfm_episode_media_url'           		=> 'media_url',
+			'cfm_episode_artwork'             		=> 'episode_art',
+			'cfm_episode_itunes_title'        		=> 'itunes_title',
+			'cfm_episode_author' 	 				=> 'author',
+			'cfm_episode_itunes_season' 	 		=> 'episode_season',
+			'cfm_episode_itunes_number' 	 		=> 'episode_number',
+			'cfm_episode_itunes_type' 	 			=> 'episode_type',
+			'cfm_episode_itunes_explicit' 	 		=> 'explicit',
+			'cfm_episode_donation_link' 	 		=> 'donation_link',
+			'cfm_episode_donation_label' 	 		=> 'donation_text',
+			'cfm_episode_seo_title' 	 			=> 'seo_title',
+			'cfm_episode_seo_description' 	 		=> 'seo_description',
+			'cfm_episode_private' 	 				=> 'episode_private',
+			'cfm_episode_expiration' 	 			=> 'episode_expiration',
+
+			'cfm_episode_idea_title' 	 			=> 'idea_title',
+			'cfm_episode_idea_summary' 	 			=> 'idea_summary',
+			'cfm_episode_idea_notes' 	 			=> 'idea_notes',
+			'cfm_episode_idea_created_at' 	 		=> 'idea_created_at',
+			'cfm_episode_idea_production_notes' 	=> 'idea_production_notes',
+
+			'cfm_episode_amie_status' 	 			=> 'amie_status',
+			'cfm_episode_early_access_end_date' 	=> 'early_access_end_date',
+			'cfm_episode_captivate_episode_type' 	=> 'captivate_episode_type',
+			'cfm_episode_exclusivity_date' 	 		=> 'exclusivity_date',
+
+			'cfm_episode_shownotes_rendered' 	 	=> 'shownotes_rendered',
+		);
+
+		$meta_fields = array();
+		foreach ( $meta_map as $meta_key => $data_key ) {
+			if ( isset($episode_data[$data_key]) ) {
+				$meta_fields[$meta_key] = $episode_data[$data_key];
+			}
+		}
+
+		// get media name from media_url if it exists and not null.
+		if ( isset($episode_data['media_url']) && $episode_data['media_url'] ) {
+			$media_pathinfo = pathinfo($episode_data['media_url']);
+			$media_name = $media_pathinfo['filename'];
+			$meta_fields['cfm_episode_media_name'] = $media_name;
+		}
+
+		// clear other media info if media id changes.
+		$media_id = get_post_meta( $post_id, 'cfm_episode_media_id', true );
+		if ( isset($episode_data['media_id']) && $media_id !== $episode_data['media_id'] ) {
+			$meta_fields['cfm_episode_media_type'] = "";
+			$meta_fields['cfm_episode_media_size'] = "";
+			$meta_fields['cfm_episode_media_id3_size'] = "";
+			$meta_fields['cfm_episode_media_duration'] = "";
+			$meta_fields['cfm_episode_media_duration_str'] = "";
+			$meta_fields['cfm_episode_media_bit_rate'] = "";
+			$meta_fields['cfm_episode_media_bit_rate_str'] = "";
+			$meta_fields['cfm_episode_media_created_at'] = "";
+			$meta_fields['cfm_episode_media_shows_id'] = "";
+			$meta_fields['cfm_episode_media_updated_at'] = "";
+			$meta_fields['cfm_episode_media_users_id'] = "";
+		}
+
+		// ensure 'episode_private' is set to '0' if it's not set or null.
+		if ( ! isset($episode_data['episode_private']) || $episode_data['episode_private'] === '' ) {
+			$meta_fields['cfm_episode_private'] = '0';
+		}
+
+		// transcript.
+		$transcriptions = array(
+			'transcription_uploaded' => ( isset($episode_data['transcription_file']) && $episode_data['transcription_file'] ) ? 'file' : 'text',
+			'transcription_html'     => isset($episode_data['transcription_html']) ? $episode_data['transcription_html'] : null,
+			'transcription_file'     => isset($episode_data['transcription_file']) ? $episode_data['transcription_file'] : null,
+			'transcription_json'     => isset($episode_data['transcription_json']) ? $episode_data['transcription_json'] : null,
+			'transcription_text'     => isset($episode_data['transcription_text']) ? $episode_data['transcription_text'] : null,
+		);
+		$meta_fields['cfm_episode_transcript'] = $transcriptions;
+
+		// bookings.
+		$bookings = cfm_get_captivate_bookings( $episode_data['shows_id'], $episode_data['id'] );
+		if ( 'api_error' != $bookings ) {
+			$meta_fields['cfm_episode_bookings'] = $bookings;
+		}
+
+		foreach ( $meta_fields as $key => $value ) {
+			update_post_meta( $post_id, $key, $value );
+		}
+	}
+endif;
+
 if ( ! function_exists( 'cfm_sync_episodes' ) ) :
     /**
 	 * Sync up Captivate episodes to Captivate Sync. Get it.
@@ -1021,16 +1119,113 @@ if ( ! function_exists( 'cfm_sync_episodes' ) ) :
 	 * @param array $do  all | update | delete | create
 	 * @param array $episodes  All episodes or by ID
 	 *
-	 * @return boolean
+	 * @return bool
 	 */
-    function cfm_sync_episodes( $show_id, $do = array('all'), $episode_ids = array('all') ) {
+    function cfm_sync_episodes($show_id, $do = array('all')) {
 
-		$captivate_episodes = cfm_get_captivate_episodes( $show_id );
+		// get Captivate episodes data, terminate on error.
+		$captivate_episodes = cfm_get_captivate_episodes($show_id);
+		if ( empty($captivate_episodes) || 'api_error' == $captivate_episodes ) {
+            return false;
+        }
+		$captivate_episodes_data = cfm_episodes_data_array($captivate_episodes);
 
-		if ( ! empty( $captivate_episodes ) && 'api_error' != $captivate_episodes ) {
+		// get WP episodes IDs.
+		$episode_ids = get_posts(array(
+			'post_type'      => 'captivate_podcast',
+			'posts_per_page' => -1,
+			'order'          => 'DESC',
+			'post_status'    => array( 'publish', 'draft', 'future', 'private' ),
+			'meta_query'     => array(
+				array(
+					'key'     => 'cfm_show_id',
+					'value'   => $show_id,
+					'compare' => '=',
+				),
+			),
+			'fields'         => 'ids',
+		));
 
-			$captivate_episodes_data = cfm_episodes_data_array( $captivate_episodes );
+		// Populate $wp_episode_ids.
+		$wp_episode_ids = array();
+		if ( !empty($episode_ids) ) {
+			foreach ($episode_ids as $post_id) {
+				$cfm_episode_id = get_post_meta($post_id, 'cfm_episode_id', true);
+				$wp_episode_ids[$cfm_episode_id] = get_the_title($post_id);
+			}
+			wp_reset_postdata();
+		}
 
+		// INSERT TO WP - only if set to all or create && all
+		if ( count(array_intersect($do, array('all', 'create'))) > 0 ) {
+			$to_insert = array_diff_key($captivate_episodes_data, $wp_episode_ids);
+
+			if ( !empty($to_insert) ) {
+				foreach ( $to_insert as $result ) {
+
+					// Skip if episode already exists or if the status is "Idea".
+					if ( cfm_episode_exists( $result['id'] ) || $result['status'] == 'Idea' ) {
+						continue;
+					}
+
+					// Prepare episode post data.
+					$published_date = date( 'Y-m-d H:i:s', strtotime( $result['published_date'] ) );
+					$post_data = array(
+						'post_title'   => wp_encode_emoji( $result['title'] ),
+						'post_content' => wp_filter_post_kses(wp_encode_emoji( $result['shownotes'])),
+						'post_author'  => cfm_get_show_author( $show_id ),
+						'post_type'    => 'captivate_podcast',
+						'post_date' 	=> $published_date,
+						'post_date_gmt' => get_gmt_from_date( $published_date, 'Y-m-d H:i:s' ),
+					);
+					if ( $result['slug'] ) {
+						$post_data['post_name'] = $result['slug'];
+					}
+					$post_data['post_status'] = cfm_get_episode_status( $result['status'] );
+
+					// Create the episode.
+					$inserted_pid = wp_insert_post( $post_data );
+
+					// Update episode meta.
+                    cfm_update_episode_meta( $inserted_pid, $result );
+				}
+			}
+		}
+
+		// DELETE FROM WP - only if set to all or delete && all
+		if ( count(array_intersect($do, array('all', 'delete'))) > 0 ) {
+			$to_delete = array_diff_key($wp_episode_ids, $captivate_episodes_data);
+
+			if ( !empty($to_delete) ) {
+				foreach ( $to_delete as $delete_id => $episode_title ) {
+					// Query the episode to delete.
+					$episode = get_posts( array(
+						'post_type'      => 'captivate_podcast',
+						'posts_per_page' => 1,
+						'post_status'    => array( 'publish', 'draft', 'future', 'private' ),
+						'meta_query'     => array(
+							array(
+								'key'     => 'cfm_episode_id',
+								'value'   => $delete_id,
+								'compare' => '=',
+							),
+							array(
+								'key'     => 'cfm_migrated_stats',
+								'compare' => 'NOT EXISTS',
+							),
+						),
+					));
+
+					if ( !empty($episode) ) {
+						wp_trash_post($episode[0]->ID);
+					}
+				}
+				wp_reset_postdata();
+			}
+		}
+
+		// UPDATE WP EPISODES - only if set to all or update && all
+		if ( count(array_intersect($do, array('all', 'update'))) > 0 ) {
 			// get WP episodes.
 			$get_episodes = array(
 				'post_type'      => 'captivate_podcast',
@@ -1045,349 +1240,189 @@ if ( ! function_exists( 'cfm_sync_episodes' ) ) :
 					),
 				),
 			);
-
-			$episodes = new WP_Query( $get_episodes );
-
-			$wp_episode_ids = array();
+			$episodes = new WP_Query($get_episodes);
 
 			if ( $episodes->have_posts() ) :
-
-				while ( $episodes->have_posts() ) :
-					$episodes->the_post();
+				while ( $episodes->have_posts() ) : $episodes->the_post();
 					$pid = get_the_ID();
+					$cfm_episode_id = get_post_meta($pid, 'cfm_episode_id', true);
 
-					// store WP data to array (for comparison).
-					$cfm_episode_id                  = get_post_meta( $pid, 'cfm_episode_id', true );
-					$wp_episode_ids[ $cfm_episode_id ] = get_the_title();
-
-					// update WP episodes - ONLY if set to all or update && all | specific episodes
-					if ( array_key_exists( $cfm_episode_id, $captivate_episodes_data ) ) {
-
-						if ( count( array_intersect( $do, array( 'all', 'update' ) ) ) > 0 && ( in_array( 'all', $episode_ids ) || in_array( $cfm_episode_id, $episode_ids ) ) ) {
-
-							// title.
-							$title = $captivate_episodes_data[ $cfm_episode_id ]['title'];
-
-							// published_date.
-							$published_date = $captivate_episodes_data[ $cfm_episode_id ]['published_date'];
-							$published_date = date( 'Y-m-d H:i:s', strtotime( $published_date ) );
-
-							// post data.
-							$update_post_data = array(
-								'ID'           	=> $pid,
-								'post_title'   	=> wp_encode_emoji( $title ),
-								'post_date' 	=> $published_date,
-								'post_date_gmt' => get_gmt_from_date( $published_date, 'Y-m-d H:i:s' ),
-								'edit_date' 	=> true,
-							);
-
-							// show notes - sync only if not empty and more than 20 characters.
-							$shownotes = $captivate_episodes_data[ $cfm_episode_id ]['shownotes'];
-							$shownotes_length = strlen( $shownotes );
-							if ( '' != $shownotes && '<p><br></p>' != $shownotes && $shownotes_length > 20 ) {
-								$update_post_data['post_content'] = wp_encode_emoji( $shownotes );
-							}
-
-							// status.
-							$status = $captivate_episodes_data[ $cfm_episode_id ]['status'];
-
-							switch ( $status ) {
-								case 'Published':
-									$post_status = 'publish';
-									break;
-								case 'Scheduled':
-									$post_status = 'future';
-									break;
-								case 'Expired':
-									$post_status = 'publish';
-									break;
-								case 'Exclusive':
-									$post_status = 'publish';
-									break;
-								case 'Early Access':
-									$post_status = 'publish';
-									break;
-								default:
-									$post_status = 'draft';
-							}
-							update_post_meta( $pid, 'cfm_episode_status', $status );
-
-							$update_post_data['post_status'] = $post_status;
-
-							// slug.
-							if ( $captivate_episodes_data[ $cfm_episode_id ]['slug'] && $captivate_episodes_data[ $cfm_episode_id ]['slug'] !== null && $captivate_episodes_data[ $cfm_episode_id ]['slug'] !== '0' ) {
-								$update_post_data['post_name'] = $captivate_episodes_data[ $cfm_episode_id ]['slug'];
-							}
-
-							// Update the post data.
-							wp_update_post( $update_post_data );
-
-							// media data.
-							update_post_meta( $pid, 'cfm_episode_media_id', $captivate_episodes_data[ $cfm_episode_id ]['media_id'] );
-							update_post_meta( $pid, 'cfm_episode_media_url', $captivate_episodes_data[ $cfm_episode_id ]['media_url'] );
-							update_post_meta( $pid, 'cfm_episode_media_name', $captivate_episodes_data[ $cfm_episode_id ]['media_name'] );
-							update_post_meta( $pid, 'cfm_episode_media_size', $captivate_episodes_data[ $cfm_episode_id ]['media_size'] );
-							update_post_meta( $pid, 'cfm_episode_media_id3_size', $captivate_episodes_data[ $cfm_episode_id ]['media_id3_size'] );
-							update_post_meta( $pid, 'cfm_episode_media_type', $captivate_episodes_data[ $cfm_episode_id ]['media_type'] );
-							$media_bit_rate = $captivate_episodes_data[ $cfm_episode_id ]['media_bit_rate'];
-							update_post_meta( $pid, 'cfm_episode_media_bit_rate', $media_bit_rate );
-							$media_bit_rate_str = substr( $media_bit_rate, 0, -3 ) . 'kbps';
-							update_post_meta( $pid, 'cfm_episode_media_bit_rate_str', $media_bit_rate_str );
-
-							$media_duration = $captivate_episodes_data[ $cfm_episode_id ]['media_duration'];
-							update_post_meta( $pid, 'cfm_episode_media_duration', $media_duration );
-								$media_duration_str = cfm_seconds_to_str( $media_duration );
-							update_post_meta( $pid, 'cfm_episode_media_duration_str', $media_duration_str );
-
-							// episode_art.
-							$episode_art = $captivate_episodes_data[ $cfm_episode_id ]['episode_art'];
-							if ( get_post_meta( $pid, 'cfm_episode_artwork', true ) !== $episode_art ) {
-								update_post_meta( $pid, 'cfm_episode_artwork', $episode_art );
-								delete_post_meta( $pid, 'cfm_episode_artwork_id' );
-								delete_post_meta( $pid, 'cfm_episode_artwork_width' );
-								delete_post_meta( $pid, 'cfm_episode_artwork_height' );
-								delete_post_meta( $pid, 'cfm_episode_artwork_type' );
-								delete_post_meta( $pid, 'cfm_episode_artwork_filesize' );
-							}
-
-							// other post meta.
-							update_post_meta( $pid, 'cfm_episode_author', $captivate_episodes_data[ $cfm_episode_id ]['author'] );
-							update_post_meta( $pid, 'cfm_episode_itunes_title', $captivate_episodes_data[ $cfm_episode_id ]['itunes_title'] );
-							update_post_meta( $pid, 'cfm_episode_itunes_season', $captivate_episodes_data[ $cfm_episode_id ]['episode_season'] );
-							update_post_meta( $pid, 'cfm_episode_itunes_number', $captivate_episodes_data[ $cfm_episode_id ]['episode_number'] );
-							update_post_meta( $pid, 'cfm_episode_itunes_type', $captivate_episodes_data[ $cfm_episode_id ]['episode_type'] );
-							update_post_meta( $pid, 'cfm_episode_itunes_explicit', $captivate_episodes_data[ $cfm_episode_id ]['explicit'] );
-							update_post_meta( $pid, 'cfm_episode_donation_link', $captivate_episodes_data[ $cfm_episode_id ]['donation_link'] );
-							update_post_meta( $pid, 'cfm_episode_donation_label', $captivate_episodes_data[ $cfm_episode_id ]['donation_text'] );
-							update_post_meta( $pid, 'cfm_episode_seo_title', $captivate_episodes_data[ $cfm_episode_id ]['seo_title'] );
-							update_post_meta( $pid, 'cfm_episode_seo_description', $captivate_episodes_data[ $cfm_episode_id ]['seo_description'] );
-							update_post_meta( $pid, 'cfm_episode_private', $captivate_episodes_data[ $cfm_episode_id ]['episode_private'] );
-							update_post_meta( $pid, 'cfm_episode_expiration', $captivate_episodes_data[ $cfm_episode_id ]['episode_expiration'] );
-
-
-							// transcriptions.
-							$transcription_uploaded = ( null != $captivate_episodes_data[ $cfm_episode_id ]['transcription_file'] && '' != $captivate_episodes_data[ $cfm_episode_id ]['transcription_file'] ) ? 'file' : 'text';
-							$transcriptions = array(
-								'transcription_uploaded' => $transcription_uploaded,
-								'transcription_html' 	 => $captivate_episodes_data[ $cfm_episode_id ]['transcription_html'],
-								'transcription_file' 	 => $captivate_episodes_data[ $cfm_episode_id ]['transcription_file'],
-								'transcription_json' 	 => $captivate_episodes_data[ $cfm_episode_id ]['transcription_json'],
-								'transcription_text' 	 => $captivate_episodes_data[ $cfm_episode_id ]['transcription_text'],
-							);
-							update_post_meta( $pid, 'cfm_episode_transcript', $transcriptions );
-
-							// idea data.
-							update_post_meta( $pid, 'cfm_episode_idea_title', $captivate_episodes_data[ $cfm_episode_id ]['idea_title'] );
-							update_post_meta( $pid, 'cfm_episode_idea_summary', $captivate_episodes_data[ $cfm_episode_id ]['idea_summary'] );
-							update_post_meta( $pid, 'cfm_episode_idea_notes', $captivate_episodes_data[ $cfm_episode_id ]['idea_notes'] );
-							update_post_meta( $pid, 'cfm_episode_idea_created_at', $captivate_episodes_data[ $cfm_episode_id ]['idea_created_at'] );
-							update_post_meta( $pid, 'cfm_episode_idea_production_notes', $captivate_episodes_data[ $cfm_episode_id ]['idea_production_notes'] );
-
-							// other post meta.
-							update_post_meta( $pid, 'cfm_episode_amie_status', $captivate_episodes_data[ $cfm_episode_id ]['amie_status'] );
-							update_post_meta( $pid, 'cfm_episode_early_access_end_date', $captivate_episodes_data[ $cfm_episode_id ]['early_access_end_date'] );
-							update_post_meta( $pid, 'cfm_episode_captivate_episode_type', $captivate_episodes_data[ $cfm_episode_id ]['captivate_episode_type'] );
-							update_post_meta( $pid, 'cfm_episode_exclusivity_date', $captivate_episodes_data[ $cfm_episode_id ]['exclusivity_date'] );
-
-							// bookings.
-							$bookings = cfm_get_captivate_bookings( $show_id, $cfm_episode_id );
-							if ( 'api_error' != $bookings ) {
-								update_post_meta( $pid, 'cfm_episode_bookings', $bookings );
-							}
-
-						}
+					// Skip if episode doesn't exist in Captivate data
+					if ( ! array_key_exists($cfm_episode_id, $captivate_episodes_data) ) {
+						continue;
 					}
 
+					// published_date.
+					$published_date = $captivate_episodes_data[ $cfm_episode_id ]['published_date'];
+					$published_date = date('Y-m-d H:i:s', strtotime($published_date));
+
+					// post data.
+					$update_post_data = array(
+						'ID'           	=> $pid,
+						'post_title'   	=> wp_encode_emoji($captivate_episodes_data[$cfm_episode_id]['title']),
+						'post_content' 	=> wp_filter_post_kses(wp_encode_emoji($captivate_episodes_data[$cfm_episode_id]['shownotes'])),
+						'post_date' 	=> $published_date,
+						'post_date_gmt' => get_gmt_from_date($published_date, 'Y-m-d H:i:s'),
+						'edit_date' 	=> true,
+					);
+
+					// status.
+					$status = $captivate_episodes_data[ $cfm_episode_id ]['status'];
+					$update_post_data['post_status'] = cfm_get_episode_status($status);
+
+					// slug.
+					if ( $captivate_episodes_data[$cfm_episode_id]['slug'] && $captivate_episodes_data[$cfm_episode_id]['slug'] !== null && $captivate_episodes_data[$cfm_episode_id]['slug'] !== '0' ) {
+						$update_post_data['post_name'] = $captivate_episodes_data[$cfm_episode_id]['slug'];
+					}
+
+					// Update the post data.
+					wp_update_post($update_post_data);
+
+					// Update post meta.
+					cfm_update_episode_meta($pid, $captivate_episodes_data[$cfm_episode_id]);
 				endwhile;
 
+				wp_reset_postdata();
 			endif;
-
-			// delete from WP - ONLY if set to all or delete && all | specific episodes
-			if ( count( array_intersect( $do, array( 'all', 'delete' ) ) ) > 0 && ( in_array( 'all', $episode_ids ) || in_array( $cfm_episode_id, $episode_ids ) ) ) {
-				$to_delete = array_diff_key( $wp_episode_ids, $captivate_episodes_data );
-
-				if ( ! empty( $to_delete ) ) {
-
-					foreach ( $to_delete as $delete_id => $episode_title ) {
-
-						$get_episode = array(
-							'post_type'      => 'captivate_podcast',
-							'posts_per_page' => 1,
-							'order'          => 'DESC',
-							'post_status'    => array( 'publish', 'draft', 'future', 'private' ),
-							'meta_query'     => array(
-								array(
-									'key'     => 'cfm_episode_id',
-									'value'   => $delete_id,
-									'compare' => '=',
-								),
-								array(
-									'key'     => 'cfm_migrated_stats',
-									'compare' => 'NOT EXISTS',
-								),
-							),
-						);
-
-						$episode = new WP_Query( $get_episode );
-
-						if ( $episode->have_posts() ) :
-
-							while ( $episode->have_posts() ) :
-								$episode->the_post();
-
-								wp_trash_post( get_the_ID() );
-
-							endwhile;
-
-						endif;
-
-					}
-				}
-			}
-
-			// insert to WP - ONLY if set to all or create && all
-			if ( count( array_intersect( $do, array( 'all', 'create' ) ) ) > 0 && in_array( 'all', $episode_ids ) ) {
-				$to_insert = array_diff_key( $captivate_episodes_data, $wp_episode_ids );
-
-				if ( ! empty( $to_insert ) ) {
-
-					foreach ( $to_insert as $result ) {
-
-						if ( cfm_episode_exists( $result['id'] ) ) {
-							continue;
-						}
-
-						$post_title = $result['title'];
-						$published_date = date( 'Y-m-d H:i:s', strtotime( $result['published_date'] ) );
-
-						$post_data = array(
-							'post_title'   => wp_encode_emoji( $post_title ),
-							'post_content' => wp_encode_emoji( $result['shownotes'] ),
-							'post_author'  => cfm_get_show_author( $show_id ),
-							'post_type'    => 'captivate_podcast',
-							'post_date' 	=> $published_date,
-							'post_date_gmt' => get_gmt_from_date( $published_date, 'Y-m-d H:i:s' ),
-						);
-
-						if ( $result['slug'] ) {
-							$post_data['post_name'] = $result['slug'];
-						}
-
-						// status.
-						switch ( $result['status'] ) {
-							case 'Published':
-								$post_status = 'publish';
-								break;
-							case 'Scheduled':
-								$post_status = 'future';
-								break;
-							case 'Expired':
-								$post_status = 'publish';
-								break;
-							case 'Exclusive':
-								$post_status = 'publish';
-								break;
-							case 'Early Access':
-								$post_status = 'publish';
-								break;
-							default:
-								$post_status = 'draft';
-						}
-
-						$post_data['post_status'] = $post_status;
-						$inserted_pid = wp_insert_post( $post_data );
-
-						update_post_meta( $inserted_pid, 'cfm_episode_status', $result['status'] );
-						update_post_meta( $inserted_pid, 'cfm_show_id', $result['shows_id'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_id', $result['id']);
-						update_post_meta( $inserted_pid, 'cfm_episode_media_id', $result['media_id'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_media_url', $result['media_url'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_media_name', $result['media_name'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_media_size', $result['media_size'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_media_bit_rate', $result['media_bit_rate'] );
-						$media_bit_rate_str = substr( $result['media_bit_rate'], 0, -3 ) . 'kbps';
-						update_post_meta( $inserted_pid, 'cfm_episode_media_bit_rate_str', $media_bit_rate_str );
-						update_post_meta( $inserted_pid, 'cfm_episode_media_id3_size', $result['media_id3_size'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_media_type', $result['media_type'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_media_duration', $result['media_duration'] );
-						$media_duration_str = cfm_seconds_to_str( $result['media_duration'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_media_duration_str', $media_duration_str );
-						update_post_meta( $inserted_pid, 'cfm_episode_artwork', $result['episode_art'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_itunes_title', $result['itunes_title'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_author', $result['author'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_itunes_season', $result['episode_season'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_itunes_number', $result['episode_number'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_itunes_type', $result['episode_type'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_itunes_explicit', $result['explicit'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_donation_link', $result['donation_link'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_donation_label', $result['donation_text'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_seo_title', $result['seo_title'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_seo_description', $result['seo_description'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_private', $result['episode_private'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_expiration', $result['episode_expiration'] );
-
-						// transcriptions.
-						$transcription_uploaded = ( null != $result['transcription_file'] && '' != $result['transcription_file'] ) ? 'file' : 'text';
-						$transcriptions = array(
-							'transcription_uploaded' => $transcription_uploaded,
-							'transcription_html' 	 => $result['transcription_html'],
-							'transcription_file' 	 => $result['transcription_file'],
-							'transcription_json' 	 => $result['transcription_json'],
-							'transcription_text' 	 => $result['transcription_text'],
-						);
-						update_post_meta( $inserted_pid, 'cfm_episode_transcript', $transcriptions );
-
-						// idea data.
-						update_post_meta( $inserted_pid, 'cfm_episode_idea_title', $result['idea_title'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_idea_summary', $result['idea_summary'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_idea_notes', $result['idea_notes'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_idea_created_at', $result['idea_created_at'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_idea_production_notes', $result['idea_production_notes'] );
-
-						// other post meta.
-						update_post_meta( $inserted_pid, 'cfm_episode_amie_status', $result['amie_status'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_early_access_end_date', $result['early_access_end_date'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_captivate_episode_type', $result['captivate_episode_type'] );
-						update_post_meta( $inserted_pid, 'cfm_episode_exclusivity_date', $result['exclusivity_date'] );
-
-						// bookings.
-						$bookings = cfm_get_captivate_bookings( $show_id, $cfm_episode_id );
-						if ( 'api_error' != $bookings ) {
-							update_post_meta( $inserted_pid, 'cfm_episode_bookings', $bookings );
-						}
-					}
-				}
-			}
-
-			return true;
 		}
-		else {
-			return false;
-		}
+
+		return true;
     }
 endif;
+
+if ( ! function_exists( 'cfm_sync_wp_episode' ) ) :
+    /**
+	 * Sync up Captivate episodes to Captivate Sync. Get it.
+	 *
+	 * @since 1.0
+	 * @param array $do update | delete | create
+	 * @param array $episode_id Captivate episode ID
+	 *
+	 * @return bool
+	 */
+    function cfm_sync_wp_episode($show_id, $episode_id, $do = 'update') {
+
+		if ( ! $show_id || ! $episode_id ) {
+			return false;
+		}
+
+		$get_episode = array(
+			'post_type'  		=> 'captivate_podcast',
+			'post_status'    => array( 'publish', 'draft', 'future', 'private' ),
+			'posts_per_page'  	=> 1,
+			'meta_query' 		=> array(
+				array(
+					'key'     	=> 'cfm_episode_id',
+					'value'   	=> $episode_id,
+					'compare' 	=> '=',
+				),
+			),
+		);
+		$episode = new WP_Query($get_episode);
+
+		// DELETE WP EPISODE
+		if ( $do == 'delete' ) {
+			if ( $episode->have_posts() ) {
+				$episode->the_post();
+				wp_trash_post(get_the_ID());
+			}
+		}
+
+		$captivate_episode = cfm_get_captivate_episode($episode_id);
+
+		if ( ! $captivate_episode ) {
+			return false;
+		}
+
+		if ( $episode->have_posts() ) {
+			$episode->the_post();
+			$pid = get_the_ID();
+
+			// UPDATE WP EPISODE
+			if ( $do == 'update' ) {
+
+				$captivate_episode_data = cfm_episodes_data_array($captivate_episode, $episode_id);
+
+				// published_date.
+				$published_date = $captivate_episode_data['published_date'];
+				$published_date = date( 'Y-m-d H:i:s', strtotime($published_date) );
+
+				// post data.
+				$update_post_data = array(
+					'ID'           	=> $pid,
+					'post_title'   	=> wp_encode_emoji($captivate_episode_data['title']),
+					'post_content' 	=> wp_filter_post_kses(wp_encode_emoji($captivate_episode_data['shownotes'])),
+					'post_date' 	=> $published_date,
+					'post_date_gmt' => get_gmt_from_date($published_date, 'Y-m-d H:i:s'),
+					'edit_date' 	=> true,
+				);
+
+				// status.
+				$status = $captivate_episode_data['status'];
+				$update_post_data['post_status'] = cfm_get_episode_status( $status );
+
+				// slug.
+				if ( $captivate_episode_data['slug'] && $captivate_episode_data['slug'] !== null && $captivate_episode_data['slug'] !== '0' ) {
+					$update_post_data['post_name'] = $captivate_episode_data['slug'];
+				}
+
+				// Update the post data.
+				wp_update_post($update_post_data);
+
+				// Update post meta
+				cfm_update_episode_meta($pid, $captivate_episode_data);
+			}
+		}
+		else {
+
+			// CREATE WP EPISODE
+			if ( $do == 'create' ) {
+
+				$captivate_episode_data = cfm_episodes_data_array($captivate_episode, $episode_id);
+
+				// published_date.
+				$published_date = $captivate_episode_data['published_date'];
+				$published_date = date('Y-m-d H:i:s', strtotime($published_date));
+
+				// post data.
+				$post_data = array(
+					'post_title'   => wp_encode_emoji($captivate_episode_data['title']),
+					'post_content' => wp_filter_post_kses(wp_encode_emoji($captivate_episode_data['shownotes'])),
+					'post_author'  => cfm_get_show_author($show_id),
+					'post_type'    => 'captivate_podcast',
+					'post_date' 	=> $published_date,
+					'post_date_gmt' => get_gmt_from_date($published_date, 'Y-m-d H:i:s'),
+				);
+
+				if ( $captivate_episode_data['slug'] ) {
+					$post_data['post_name'] = $captivate_episode_data['slug'];
+				}
+				$post_data['post_status'] = cfm_get_episode_status($captivate_episode_data['status']);
+
+				// Create the episode.
+				$inserted_pid = wp_insert_post($post_data);
+
+				// Update episode meta.
+				cfm_update_episode_meta($inserted_pid, $captivate_episode_data);
+			}
+
+		}
+
+		return true;
+	}
+endif;
+
 
 if ( ! function_exists( 'cfm_user_authentication' ) ) :
 	/**
 	 * Check user authentication
 	 *
-	 * @since 1.0
+	 * @since 3.0
 	 *
 	 * @return string | boolean
 	 */
 	function cfm_user_authentication() {
-		if ( get_transient( 'cfm_authentication_token' ) ) {
-
-			if ( 'FAILED' == get_transient( 'cfm_authentication_token' ) ) {
-				return 'failed';
-			}
-			else {
-				return true;
-			}
-		}
-		else {
-			return false;
-		}
+		return (bool) get_transient( 'cfm_authentication_token' );
 	}
 endif;
 
@@ -1687,9 +1722,7 @@ if ( ! function_exists( 'cfm_get_inactive_episodes' ) ) :
 	 * @return array (post ids)
 	 */
 	function cfm_get_inactive_episodes() {
-
-		$q = new WP_Query();
-		$episode_ids = $q->query(
+		return get_posts(
 			array(
 				'post_type'      => 'captivate_podcast',
 				'posts_per_page' => -1,
@@ -1700,11 +1733,9 @@ if ( ! function_exists( 'cfm_get_inactive_episodes' ) ) :
 						'compare' => '=',
 					),
 				),
-				'fields'     => 'ids',
+				'fields' => 'ids',
 			)
 		);
-
-		return $episode_ids;
 	}
 endif;
 
@@ -1717,9 +1748,7 @@ if ( ! function_exists( 'cfm_get_private_episodes' ) ) :
 	 * @return array (post ids)
 	 */
 	function cfm_get_private_episodes() {
-
-		$q = new WP_Query();
-		$episode_ids = $q->query(
+		return get_posts(
 			array(
 				'post_type'      => 'captivate_podcast',
 				'posts_per_page' => -1,
@@ -1730,11 +1759,9 @@ if ( ! function_exists( 'cfm_get_private_episodes' ) ) :
 						'compare' => '=',
 					),
 				),
-				'fields'     => 'ids',
+				'fields' => 'ids',
 			)
 		);
-
-		return $episode_ids;
 	}
 endif;
 
@@ -1747,27 +1774,24 @@ if ( ! function_exists( 'cfm_get_episode_ids_by_status' ) ) :
 	 * @param array $status array( 'all', 'Expired', 'Published', 'Draft', 'Scheduled', 'Exclusive', 'Early Access')
 	 * @return array (post ids)
 	 */
-	function cfm_get_episode_ids_by_status( $status = array( 'all' ) ) {
-
-		$q = new WP_Query();
+	function cfm_get_episode_ids_by_status($status = array('all')) {
 		$args = array(
 			'post_type'      => 'captivate_podcast',
 			'posts_per_page' => -1,
-			'fields'     => 'ids',
+			'fields'         => 'ids',
 		);
 
-		if ( ! in_array( 'all', $status ) ) {
+		if ( !in_array('all', $status) ) {
 			$args['meta_query'] = array(
 				array(
 					'key'     => 'cfm_episode_status',
 					'value'   => $status,
 					'compare' => 'IN',
-				)
+				),
 			);
 		}
-		$episode_ids = $q->query( $args );
 
-		return $episode_ids;
+		return get_posts($args);
 	}
 endif;
 
@@ -1780,27 +1804,24 @@ if ( ! function_exists( 'cfm_get_episode_ids_by_type' ) ) :
 	 * @param array $types array( 'all', 'standard', 'exclusive', 'early')
 	 * @return array (post ids)
 	 */
-	function cfm_get_episode_ids_by_type( $types = array( 'all' ) ) {
-
-		$q = new WP_Query();
+	function cfm_get_episode_ids_by_type($types = array('all')) {
 		$args = array(
 			'post_type'      => 'captivate_podcast',
 			'posts_per_page' => -1,
-			'fields'     => 'ids',
+			'fields'         => 'ids',
 		);
 
-		if ( ! in_array( 'all', $types ) ) {
+		if ( !in_array('all', $types) ) {
 			$args['meta_query'] = array(
 				array(
 					'key'     => 'cfm_episode_captivate_episode_type',
 					'value'   => $types,
 					'compare' => 'IN',
-				)
+				),
 			);
 		}
-		$episode_ids = $q->query( $args );
 
-		return $episode_ids;
+		return get_posts($args);
 	}
 endif;
 
@@ -2433,9 +2454,8 @@ if ( ! function_exists( 'cfm_get_se_num_format' ) ) :
 			$cfm_episode_itunes_season = get_post_meta( $post_id, 'cfm_episode_itunes_season', true );
 			$cfm_episode_itunes_number = get_post_meta( $post_id, 'cfm_episode_itunes_number', true );
 
-			$cfm_general_settings = get_option( 'cfm_general_settings' );
-			$season_episode_number_text = isset( $cfm_general_settings['season_episode_number_text'] ) ? $cfm_general_settings['season_episode_number_text'] : 'S{snum} E{enum}: ';
-			$bonus_trailer_text = isset( $cfm_general_settings['bonus_trailer_text'] ) ? $cfm_general_settings['bonus_trailer_text'] : 'S{snum} {enum} Episode: ';
+			$season_episode_number_text = CFMH_Hosting_Settings::get_settings( 'season_episode_number_text', 'S{snum} E{enum}: ' );
+			$bonus_trailer_text = CFMH_Hosting_Settings::get_settings( 'bonus_trailer_text', 'S{snum} {enum} Episode: ' );
 
 			// per show.
 			$cfm_show_id = get_post_meta( $post_id, 'cfm_show_id', true );
@@ -2620,13 +2640,13 @@ if ( ! function_exists( 'cfm_get_published_episodes' ) ) :
 	 *
 	 * @return int
 	 */
-	function cfm_get_published_episodes( $show_id ) {
+	function cfm_get_published_episodes($show_id) {
 
-		if ( ! cfm_is_valid_uuid( $show_id ) ) {
+		if ( !cfm_is_valid_uuid($show_id) ) {
 			return 0;
 		}
 
-		$args = array(
+		$query = get_posts(array(
 			'post_type'  => 'captivate_podcast',
 			'post_status' => 'publish',
 			'meta_query' => array(
@@ -2643,13 +2663,10 @@ if ( ! function_exists( 'cfm_get_published_episodes' ) ) :
 				)
 			),
 			'fields' => 'ids',
-			'posts_per_page' => -1
-		);
+			'numberposts' => -1
+		));
 
-		$query = new WP_Query($args);
-
-		// Get the number of posts.
-		return $query->post_count;
+		return count($query);
 	}
 endif;
 
@@ -2707,5 +2724,87 @@ if ( ! function_exists( 'cfm_episode_exists' ) ) :
 		));
 
 		return $query->have_posts();
+	}
+endif;
+
+if ( ! function_exists( 'cfm_disconnect_captivate_show' ) ) :
+	/**
+	 * Disconnect podcast making it available to sync on a new WordPress website
+	 *
+	 * @since 3.1.0
+	 *
+	 * @param string $show_id.
+	 * @return boolean
+	 */
+	function cfm_disconnect_captivate_show($show_id) {
+
+		if ( cfm_is_show_exists( $show_id ) ) {
+
+			// API request to disconnect the show.
+			$disconnect_show = wp_remote_request( CFMH_API_URL . '/shows/' . $show_id . '/sync',array(
+				'timeout' => 500,
+				'method'  => 'DELETE',
+				'headers' => array(
+					'Authorization' => 'Bearer ' . get_transient( 'cfm_authentication_token' ),
+				),
+			) );
+
+			// Debugging.
+			cfm_generate_log( 'DISCONNECT SHOW', $disconnect_show );
+
+			if ( ! is_wp_error( $disconnect_show ) && isset( $disconnect_show['body'] ) && 'Unauthorized' !== $disconnect_show['body'] ) {
+
+				$response = json_decode( $disconnect_show['body'] );
+
+				if ( isset( $response->success ) && $response->success ) {
+					return true;
+				}
+			}
+		}
+
+		// Return false if any condition fails.
+		return false;
+	}
+endif;
+
+
+if ( ! function_exists( 'cfm_clear_all_show_info_cache' ) ) :
+	/**
+	 * Clear cfm_shows cache
+	 * @since 3.2.0
+	 *
+	 */
+	function cfm_clear_all_show_info_cache() {
+		global $wpdb;
+
+		// Get all show info entries (you can customize this to get specific keys if needed)
+		$table_name = $wpdb->prefix . 'cfm_shows';
+
+		// Get all distinct show IDs and options
+		$results = $wpdb->get_results( "SELECT DISTINCT show_id, cfm_option FROM $table_name" );
+
+		if ( $results ) {
+			foreach ($results as $row) {
+				$cache_key = "cfm_show_info_{$row->show_id}_{$row->cfm_option}";
+				wp_cache_delete($cache_key, 'cfm_show_info');
+			}
+		}
+	}
+endif;
+
+if ( ! function_exists( 'cfm_trim_lists_for_quill' ) ) :
+	/**
+	 * Trim lists for Quill editor compatibility
+	 * @since 3.2.0
+	 *
+	 */
+	function cfm_trim_lists_for_quill($html) {
+		return preg_replace_callback('/<(ul|ol)(.*?)>(.*?)<\/\1>/is', function ($matches) {
+			// Compress only the inside of the list
+			$list_inner = preg_replace('/\s*</', '<', $matches[3]); // remove space before tags
+			$list_inner = preg_replace('/>\s*/', '>', $list_inner); // remove space after tags
+			return '<' . $matches[1] . $matches[2] . '>' . $list_inner . '</' . $matches[1] . '>';
+		}, $html);
+
 	}
 endif;

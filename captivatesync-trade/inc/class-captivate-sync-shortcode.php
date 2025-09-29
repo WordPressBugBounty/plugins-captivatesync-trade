@@ -73,9 +73,16 @@ class CFM_Hosting_Shortcode {
 		$show_ids = ( '' != $a['show_id'] ) ? explode( ',', $a['show_id'] ) : array();
 		$episode_ids = ( '' != $a['episode_id'] ) ? explode( ',', $a['episode_id'] ) : array();
 
-		if ( ! empty( $show_ids ) || ! empty( $episode_ids ) ) :
+		$ids_array = array_unique(array_merge(
+			cfm_get_inactive_episodes(),
+			cfm_get_private_episodes(),
+			cfm_get_episode_ids_by_status(array('Exclusive', 'Early Access', 'Expired')),
+			cfm_get_episode_ids_by_type(array('exclusive', 'early'))
+		));
 
-			$paged = ( get_query_var( 'paged' ) ) ? get_query_var( 'paged' ) : 1;
+		if ( ! empty($show_ids) || ! empty($episode_ids) ) :
+
+			$paged = ( get_query_var('paged') ) ? absint(get_query_var('paged')) : 1;
 			$podcasts = ( ! empty( $episode_ids ) ) ? cfm_get_show_ids() : $show_ids;
 			$orderby = ( 'episodes' == $a['order'] ) ? 'post__in' : 'date';
 
@@ -84,7 +91,7 @@ class CFM_Hosting_Shortcode {
 				'posts_per_page' => (int) $a['items'],
 				'orderby'		 => $orderby,
 				'order'          => $a['order'],
-				'post_status'    => array( 'publish' ),
+				'post_status'    => array('publish'),
 				'meta_query'     => array(
 					'relation' => 'AND',
 					array(
@@ -102,7 +109,7 @@ class CFM_Hosting_Shortcode {
 						array(
 							'key'     => 'cfm_episode_website_active',
 							'compare' => 'NOT EXISTS',
-						)
+						),
 					),
 					array(
 						'key'     => 'cfm_episode_status',
@@ -127,8 +134,7 @@ class CFM_Hosting_Shortcode {
 
 			if ( $episodes->have_posts() ) :
 
-				$cfm_general_settings = get_option( 'cfm_general_settings' );
-				$season_episode_number_enable = isset( $cfm_general_settings['season_episode_number_enable'] ) ? $cfm_general_settings['season_episode_number_enable'] : '';
+				$season_episode_number_enable = CFMH_Hosting_Settings::get_settings( 'season_episode_number_enable', '' );
 
 				if ( 'hide' == $a['se_num'] ) {
 					remove_action( 'the_title', 'CFMH_Hosting_Front::title_filter' );
@@ -155,6 +161,13 @@ class CFM_Hosting_Shortcode {
 
 							$episodes->the_post();
 							$post_id = get_the_ID();
+
+							// Skip this episode if it is marked as private (exclude from feed).
+							$episode_private = get_post_meta( $post_id, 'cfm_episode_private', true );
+							if ( $episode_private == '1' ) {
+								continue;
+							}
+
 							$episode_title = get_the_title();
 							$featured_image_class = has_post_thumbnail( $post_id ) && ( $a['image'] == 'left' || $a['image'] == 'right' ) && $a['layout'] == 'list' ? ' cfm-has-image-beside' : '';
 							$player = '<div class="cfm-episode-player">' . cfm_captivate_player( $post_id ) . '</div>';
@@ -255,9 +268,9 @@ class CFM_Hosting_Shortcode {
 							$output .= '<div id="cfm-loadmore-' . $i . '" class="cfm-episodes-loadmore">';
 								$output .= '<button
 												data-shortcode-id="' . esc_attr( $i ) . '"
-												data-shortcode-atts="' . esc_attr( base64_encode(serialize( $atts ) ) ) . '"
-												data-max-page="' . esc_attr( $episodes->max_num_pages ) . '"
-												data-current-page="' . esc_attr( $paged ) . '"
+												data-shortcode-atts="' . esc_attr( wp_json_encode( $atts ) ) . '"
+												data-max-page="' . esc_attr( intval( $episodes->max_num_pages ) ) . '"
+												data-current-page="' . esc_attr( intval( $paged ) ) . '"
 											' . $load_more_class . '>' . esc_html( $load_more_text ) . '</button>';
 							$output .= '</div>';
 
@@ -298,13 +311,31 @@ class CFM_Hosting_Shortcode {
 			$output = '<p><strong>ERROR:</strong> Something went wrong! Please refresh the page and try again.</p>';
 		}
 		else {
-			$a = unserialize( base64_decode( $_POST['shortcode_atts'] ) );
+			if ( ! isset( $_POST['shortcode_atts'] ) ) {
+				$output = 'nothing_found';
+			}
+
+			$a = $_POST['shortcode_atts'];
+
+			// Sanitize input since these can be altered.
+			$a['show_id'] = sanitize_text_field( $a['show_id'] );
+			$a['episode_id'] = sanitize_text_field( $a['episode_id'] );
+			$a['layout'] = sanitize_text_field( $a['layout'] );
+			$a['title'] = sanitize_text_field( $a['title'] );
+			$a['image'] = sanitize_text_field( $a['image'] );
+			$a['image_size'] = sanitize_text_field( $a['image_size'] );
+			$a['content'] = sanitize_text_field( $a['content'] );
+			$a['content_length'] = absint( $a['content_length'] );
+			$a['order'] = sanitize_text_field( $a['order'] );
+			$a['link'] = sanitize_text_field( $a['link'] );
+			$a['link_text'] = sanitize_text_field( $a['link_text'] );
+
 			$show_ids = ( '' != $a['show_id'] ) ? explode( ',', $a['show_id'] ) : array();
 			$episode_ids = ( '' != $a['episode_id'] ) ? explode( ',', $a['episode_id'] ) : array();
 
 			if ( ! empty( $show_ids ) || ! empty( $episode_ids ) ) {
 
-				$paged = sanitize_text_field( wp_unslash( $_POST['current_page'] ) );
+				$paged = absint( $_POST['current_page'] ?? 1 );
 				$podcasts = ( ! empty( $episode_ids ) ) ? cfm_get_show_ids() : $show_ids;
 				$orderby = ( 'episodes' == $a['order'] ) ? 'post__in' : 'date';
 
@@ -313,8 +344,9 @@ class CFM_Hosting_Shortcode {
 					'posts_per_page' => (int) $a['items'],
 					'orderby'		 => $orderby,
 					'order'          => $a['order'],
-					'post_status'    => array( 'publish' ),
+					'post_status'    => array('publish'),
 					'meta_query'     => array(
+						'relation' => 'AND',
 						array(
 							'key'     => 'cfm_show_id',
 							'value'   => $podcasts,
@@ -330,7 +362,12 @@ class CFM_Hosting_Shortcode {
 							array(
 								'key'     => 'cfm_episode_website_active',
 								'compare' => 'NOT EXISTS',
-							)
+							),
+						),
+						array(
+							'key'     => 'cfm_episode_status',
+							'value'   => array('Exclusive', 'Early Access', 'Expired'),
+							'compare' => 'NOT IN',
 						)
 					),
 					'paged' => $paged,
@@ -344,26 +381,19 @@ class CFM_Hosting_Shortcode {
 
 				if ( $episodes->have_posts() ) {
 
-					$cfm_general_settings = get_option( 'cfm_general_settings' );
-					$season_episode_number_enable = isset( $cfm_general_settings['season_episode_number_enable'] ) ? $cfm_general_settings['season_episode_number_enable'] : '';
-
-					$layout_class = $a['layout'] == 'grid' ? 'cfm-episodes-grid' : 'cfm-episodes-list';
-					$column_class = $a['layout'] == 'grid' ? ' cfm-episodes-cols-' . $a['columns'] : '';
-
-					// output style if at least one color is set.
-					if ( '' != $a['title_color'] || $a['title_hover_color'] || $a['link_text_color'] || $a['link_text_hover_color'] ) {
-						$output .= '<style>';
-							$output .= ( '' != $a['title_color'] ) ? '#cfm-episodes-' . $i . ' .cfm-episode-title a{color:' . sanitize_hex_color( $a['title_color'] ) . ';}' : '';
-							$output .= ( '' != $a['title_hover_color'] ) ? '#cfm-episodes-' . $i . ' .cfm-episode-title a:hover{color:' . sanitize_hex_color( $a['title_hover_color'] ) . ';}' : '';
-							$output .= ( '' != $a['link_text_color'] ) ? '#cfm-episodes-' . $i . ' .cfm-episode-link a {color:' . sanitize_hex_color( $a['link_text_color'] ) . ';}' : '';
-							$output .= ( '' != $a['link_text_hover_color'] ) ? '#cfm-episodes-' . $i . ' .cfm-episode-link a:hover{color:' . sanitize_hex_color( $a['link_text_hover_color'] ) . ';}' : '';
-						$output .= '</style>';
-					}
+					$season_episode_number_enable = CFMH_Hosting_Settings::get_settings( 'season_episode_number_enable', '' );
 
 					while ( $episodes->have_posts() ) :
 
 						$episodes->the_post();
 						$post_id = get_the_ID();
+
+						// Skip this episode if it is marked as private (exclude from feed).
+						$episode_private = get_post_meta( $post_id, 'cfm_episode_private', true );
+						if ( $episode_private == '1' ) {
+							continue;
+						}
+
 						$episode_title = get_the_title();
 						$featured_image_class = has_post_thumbnail( $post_id ) && ( $a['image'] == 'left' || $a['image'] == 'right' ) && $a['layout'] == 'list' ? ' cfm-has-image-beside' : '';
 						$player = '<div class="cfm-episode-player">' . cfm_captivate_player( $post_id ) . '</div>';

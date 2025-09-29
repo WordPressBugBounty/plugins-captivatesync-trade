@@ -12,10 +12,13 @@
 
 		<?php
 		$show_id = cfm_get_show_id();
+		$paged = isset($_GET['cfm_page']) ? intval($_GET['cfm_page']) : 1;
+		$search_query = isset($_GET['s']) ? sanitize_text_field($_GET['s']) : '';
 
-		$args     = array(
+		$args = array(
 			'post_type'      => 'captivate_podcast',
-			'posts_per_page' => -1,
+			'posts_per_page' => 20,
+			'post_status'    => array( 'publish', 'draft', 'future', 'private' ),
 			'order'          => 'DESC',
 			'meta_query'     => array(
 				array(
@@ -24,8 +27,13 @@
 					'compare' => '=',
 				),
 			),
+			'paged' => $paged,
 		);
-		$episodes = new WP_Query( $args );
+
+		if ( !empty($search_query) ) {
+			$args['s'] = $search_query;
+		}
+		$episodes = new WP_Query($args);
 		?>
 
 		<div class="row">
@@ -33,13 +41,20 @@
 
 				<div class="cfm-table cfm-data-table filter-enabled">
 
-					<?php if ( ! $episodes->have_posts() ) : ?>
+					<div class="d-sm-flex justify-content-between mb-3">
 
-						<div id="cfm-datatable-episodes_filter" class="dataTables_filter mb-4 text-end"><div class="filter-actions"><a href="<?php echo esc_url( admin_url( 'admin.php?page=cfm-hosting-publish-episode&show_id=' . $show_id ) ); ?>" class="btn btn-primary">Publish New Episode <i class="fal fa-podcast ms-lg-2"></i></a></div></div>
+						<form method="get" class="search-episodes-form">
+							<label class="search-episodes">
+								<i class="fal fa-search"></i>
+								<input type="hidden" name="page" value="cfm-hosting-podcast-episodes_<?php echo esc_attr($show_id); ?>">
+								<input type="search" name="s" class="form-control search" placeholder="Search your episodes..." aria-controls="cfm-datatable-episodes" value="<?php echo isset($_GET['s']) ? esc_attr($_GET['s']) : ''; ?>">
+							</label>
+						</form>
 
-					<?php endif; ?>
+						<div class="filter-actions"><a href="<?php echo esc_url( admin_url( 'admin.php?page=cfm-hosting-publish-episode&show_id=' . $show_id ) ); ?>" class="btn btn-primary">Publish New Episode <i class="fal fa-podcast ms-lg-2"></i></a></div>
+					</div>
 
-					<table id="cfm-datatable-episodes" class="table">
+					<table id="cfm-datatable-episodes" class="table dataTable">
 						<thead>
 							<tr>
 								<th class="cfm-th-num" width="50">#</th>
@@ -188,6 +203,42 @@
 							?>
 						</tbody>
 					</table>
+
+					<div class="d-sm-flex justify-content-between mt-2 mb-2">
+						<div class="cfm-paginate-info">
+							<?php
+							$total_episodes = $episodes->found_posts;
+							$posts_per_page = $args['posts_per_page'];
+							$current_page = $paged;
+							$start_post = ($current_page - 1) * $posts_per_page + 1;
+							$end_post = min($current_page * $posts_per_page, $total_episodes);
+
+							if ($total_episodes > 0) {
+								echo '<div class="dataTables_info" id="cfm-datatable-episodes_info" role="status" aria-live="polite">';
+								echo 'Showing <strong>' . $start_post . ' to ' . $end_post . '</strong> of ' . $total_episodes;
+								echo '</div>';
+							}
+							?>
+						</div>
+
+						<?php
+						$add_args = array();
+						if ( !empty($search_query) ) {
+							$add_args['s'] = $search_query;
+						}
+						echo '<div class="cfm-paginate-numbers">';
+						echo paginate_links(array(
+							'total' => $episodes->max_num_pages,
+							'current' => $paged,
+							'format' => '',
+							'base' => admin_url('admin.php?page=cfm-hosting-podcast-episodes_'.$show_id) . '&cfm_page=%#%',
+							'add_args' => $add_args,
+						));
+						echo '</div>';
+						?>
+					</div>
+
+
 				</div>
 
 			</div>

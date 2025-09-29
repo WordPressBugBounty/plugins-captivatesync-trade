@@ -70,13 +70,11 @@ $(document).ready(function($) {
 				$('#confirmation-modal').modal('hide');
 
 				if ( 'episode_deactivated' == response ) {
-					console.log('deactivated');
 					$('tr#post-'+post_id+' .btn-toggle').replaceWith('<a aria-label="Toggle" class="btn btn-toggle" data-bs-toggle="modal" data-bs-target="#confirmation-modal" data-confirmation-title="Activate Episode" data-confirmation-content="Are you sure you want to activate this episode? This episode will be activated and will be available publicly on this website." data-confirmation-button="cfm-toggle-episode" data-confirmation-button-text="Activate Episode" data-confirmation-reference="'+post_id+'" data-confirmation-nonce="'+_nonce+'"><i class="fal fa-play"></i></a>');
 
 					cfmsync_toaster('success', 'Episode deactivated on this website.');
 				}
 				else if ( 'episode_activated' == response ) {
-					console.log('activated');
 					$('tr#post-'+post_id+' .btn-toggle').replaceWith('<a aria-label="Toggle" class="btn btn-toggle" data-bs-toggle="modal" data-bs-target="#confirmation-modal" data-confirmation-title="Deactivate Episode" data-confirmation-content="Are you sure you want to deactivate this episode? This episode will be deactivated and will not be available publicly on this website. This action will not change the episode status and will not affect the episode in Captivate." data-confirmation-button="cfm-toggle-episode" data-confirmation-button-text="Deactivate Episode" data-confirmation-reference="'+post_id+'" data-confirmation-nonce="'+_nonce+'"><i class="fal fa-pause"></i></a>');
 
 					cfmsync_toaster('success', 'Episode activated on this website.');
