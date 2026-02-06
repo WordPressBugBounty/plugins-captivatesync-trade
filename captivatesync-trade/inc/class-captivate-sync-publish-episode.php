@@ -234,6 +234,40 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 							}
 						}
 
+						// cutom taxonomies.
+						$tax_exclude = [ 'captivate_category', 'captivate_tag' ];
+						$taxonomies = get_object_taxonomies( 'captivate_podcast', 'objects' );
+						foreach ( $taxonomies as $taxonomy ) {
+							if ( in_array( $taxonomy->name, $tax_exclude, true ) ) continue;
+
+							if ( isset( $_POST['tax_input'][ $taxonomy->name ] ) ) {
+
+								$submitted_terms = wp_unslash( $_POST['tax_input'][ $taxonomy->name ] );
+								$sanitized_terms = [];
+
+								if ( is_array( $submitted_terms ) && ! empty( $submitted_terms ) ) {
+
+									// For hierarchical taxonomies: use IDs
+									if ( $taxonomy->hierarchical ) {
+										foreach ( $submitted_terms as $term_id ) {
+											$sanitized_terms[] = intval( $term_id );
+										}
+									}
+									// For non-hierarchical: convert IDs to term names
+									else {
+										foreach ( $submitted_terms as $term_id ) {
+											$term_obj = get_term( intval($term_id), $taxonomy->name );
+											if ( $term_obj && ! is_wp_error( $term_obj ) ) {
+												$sanitized_terms[] = $term_obj->name;
+											}
+										}
+									}
+								}
+
+								wp_set_post_terms( $post_id, $sanitized_terms, $taxonomy->name, false );
+							}
+						}
+
 						// show id.
 						$episode_info['shows_id'] = $show_id;
 						update_post_meta( $post_id, 'cfm_show_id', $show_id );
@@ -494,6 +528,16 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 						if ( $episode_expiration ) {
 							// episode_expiration is expecting a field "episode_expiration_date"
 							$episode_info['episode_expiration_date'] = date( 'Y/m/d H:i:s', strtotime( $episode_expiration ) );
+						}
+
+						// Make sure youtube video id and title are still there if it exists.
+						$youtube_video_id = get_post_meta( $post_id, 'cfm_episode_youtube_video_id', true );
+						$youtube_video_title = get_post_meta( $post_id, 'cfm_episode_youtube_video_title', true );
+						if ( ! empty( $youtube_video_id ) ) {
+							$episode_info['youtube_video_id'] = $youtube_video_id;
+						}
+						if ( ! empty( $youtube_video_title ) ) {
+							$episode_info['youtube_video_title'] = $youtube_video_title;
 						}
 
 						if ( $cfm_episode_id && ( 'update' == $submit_action || 'draft' == $submit_action ) ) {

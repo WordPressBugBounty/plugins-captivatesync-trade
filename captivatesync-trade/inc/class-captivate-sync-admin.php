@@ -175,6 +175,7 @@ if ( ! class_exists( 'CFMH_Hosting_Admin' ) ) :
 
 			add_submenu_page( $main_menu_slug, 'Categories', 'Categories', 'manage_categories', admin_url( 'edit-tags.php?taxonomy=captivate_category' ), null );
 			add_submenu_page( $main_menu_slug, 'Tags', 'Tags', 'manage_categories', admin_url( 'edit-tags.php?taxonomy=captivate_tag' ), null );
+			cfm_custom_taxonomy_submenus( $main_menu_slug, 'captivate_podcast' );
 
 			if ( ! empty( $shows ) ) {
 				if ( current_user_can( 'manage_options' ) ) :

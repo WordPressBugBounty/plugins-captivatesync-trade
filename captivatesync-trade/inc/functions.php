@@ -362,6 +362,8 @@ if ( ! function_exists( 'cfm_episodes_data_array' ) ) :
 				'early_access_end_date'      => 'early_access_end_date',
 				'captivate_episode_type'     => 'captivate_episode_type',
 				'exclusivity_date'           => 'exclusivity_date',
+				'youtube_video_id'           => 'youtube_video_id',
+				'youtube_video_title'        => 'youtube_video_title',
 				'shownotes_rendered'         => 'shownotes_rendered'
 			);
 
@@ -1050,14 +1052,15 @@ if ( ! function_exists( 'cfm_update_episode_meta' ) ) :
 			'cfm_episode_captivate_episode_type' 	=> 'captivate_episode_type',
 			'cfm_episode_exclusivity_date' 	 		=> 'exclusivity_date',
 
+			'cfm_episode_youtube_video_id'          => 'youtube_video_id',
+			'cfm_episode_youtube_video_title'       => 'youtube_video_title',
+
 			'cfm_episode_shownotes_rendered' 	 	=> 'shownotes_rendered',
 		);
 
 		$meta_fields = array();
 		foreach ( $meta_map as $meta_key => $data_key ) {
-			if ( isset($episode_data[$data_key]) ) {
-				$meta_fields[$meta_key] = $episode_data[$data_key];
-			}
+			$meta_fields[$meta_key] = isset($episode_data[$data_key]) ? $episode_data[$data_key] : '';
 		}
 
 		// get media name from media_url if it exists and not null.
@@ -2767,7 +2770,6 @@ if ( ! function_exists( 'cfm_disconnect_captivate_show' ) ) :
 	}
 endif;
 
-
 if ( ! function_exists( 'cfm_clear_all_show_info_cache' ) ) :
 	/**
 	 * Clear cfm_shows cache
@@ -2806,5 +2808,39 @@ if ( ! function_exists( 'cfm_trim_lists_for_quill' ) ) :
 			return '<' . $matches[1] . $matches[2] . '>' . $list_inner . '</' . $matches[1] . '>';
 		}, $html);
 
+	}
+endif;
+
+if ( ! function_exists( 'cfm_custom_taxonomy_submenus' ) ) :
+	/**
+	 * Add custom taxonomy submenus under main Captivate Hosting menu
+	 * @since 3.3.0
+	 *
+	 */
+	function cfm_custom_taxonomy_submenus( $main_menu_slug, $post_type ) {
+
+		$exclude = [
+			'captivate_category',
+			'captivate_tag',
+		];
+
+		$taxonomies = get_object_taxonomies( $post_type, 'objects' );
+
+		foreach ( $taxonomies as $taxonomy ) {
+
+			// Skip excluded taxonomies
+			if ( in_array( $taxonomy->name, $exclude, true ) ) {
+				continue;
+			}
+
+			add_submenu_page(
+				$main_menu_slug,
+				$taxonomy->labels->name,
+				$taxonomy->labels->menu_name,
+				'manage_categories',
+				admin_url( 'edit-tags.php?taxonomy=' . $taxonomy->name ),
+				null
+			);
+		}
 	}
 endif;

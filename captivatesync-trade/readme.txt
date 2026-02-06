@@ -2,8 +2,8 @@
 Contributors: Kieran McKeefery, Mark Asquith, Captivate Audio Ltd
 Tags: podcast, podcasting, podcaster, itunes, captivate, CaptivateFM, powerpress, blubrry, Buzzsprout, Libsyn
 Requires at least: 5.7.0
-Tested up to: 6.8
-Stable tag: 3.2.2
+Tested up to: 6.8.3
+Stable tag: 3.3.1
 
 Captivate Sync™ is a WordPress plugin maintained and developed by Captivate, part of the Rebel Base Media family. With our background in Podcast Websites, WordPress development and podcast hosting, hundreds of independent podcasters trust Captivate Sync™ and Captivate to power their podcast brands everyday.
 
@@ -100,6 +100,21 @@ To install Captivate Sync™ manually, please follow these steps:
 
 == Changelog ==
 
+= 3.3.1 =
+* Released on 21/01/2026
+* Bug Fix: Fixed an issue where episode videos conflicted with certain page builders.
+
+= 3.3.0 =
+* Released on 28/11/2025
+* Added support for custom taxonomies.
+* Episode artwork validation on publish/edit now uses the same validation rules as the new specification (dimensions, files size, and format).
+* Security Improvement: Addressed a vulnerability in the page mapping dropdown to prevent potential injection attacks.
+* Added YouTube video link display on the Edit Episode screen when a video is available.
+* Settings: Added an option to show or hide the episode video on single episode pages.
+* Bug fix: Resolved an issue where episode statuses — Exclusive, Early Access, and Expired — were not syncing correctly when updated in Captivate.
+* Bug Fix: Resolved an issue where the episode video was unintentionally removed when updating the episode in WordPress.
+* Minor UI improvements and additional small bug fixes.
+
 = 3.2.2 =
 * Released on 21/07/2025
 * Bug fix: Resolved an issue where list formatting of show notes was not preserved correctly when synced to Captivate and vice-versa.
@@ -110,17 +125,17 @@ To install Captivate Sync™ manually, please follow these steps:
 
 = 3.2.0 =
 * Released on 15/04/2025
-* Security Improvement: Addressed a vulnerability in the shortcode load more implementation
-* Settings: Added an option to enable or disable automatic syncing of show information
-* Settings: Added an option to enable or disable automatic syncing of new episodes
-* Settings: Added an option to enable or disable automatic syncing of existing episodes
+* Security Improvement: Addressed a vulnerability in the shortcode load more implementation.
+* Settings: Added an option to enable or disable automatic syncing of show information.
+* Settings: Added an option to enable or disable automatic syncing of new episodes.
+* Settings: Added an option to enable or disable automatic syncing of existing episodes.
 * Settings: Added an option to display Captivate-generated show notes as WordPress content on individual episode pages (available soon).
 * Settings: Added an option to enable or disable clickable timestamps in the show notes.
 * Settings: Added an option to show or hide the transcript section on single episode pages.
-* Improved the podcast selection process during synchronization to prevent previously selected podcasts from being re-synced, reducing unnecessary database queries and improving overall site performance
+* Improved the podcast selection process during synchronization to prevent previously selected podcasts from being re-synced, reducing unnecessary database queries and improving overall site performance.
 * Separated automatic syncing of show information, new episodes, and existing episodes into individual WordPress scheduled tasks to reduce processing load.
 * Optimized episode list pagination in the admin area for enhanced performance and faster loading times.
-* Implemented caching for show information to reduce database queries
+* Implemented caching for show information to reduce database queries.
 
 = 3.1.0 =
 * Released on 07/01/2025
@@ -156,29 +171,29 @@ To install Captivate Sync™ manually, please follow these steps:
 * Released on 28/10/2024
 * Overall User Interface updated
 * Settings: Allow users to change single episode slug, category archive slug, enable or disable default archive page.
-* Settings: Ability to display artwork in place of the featured image
-* Settings: Ability to display season and episode number with the episode title
-* Shortcode: Ability to select multiple podcasts and specific episodes
-* Shortcode: Added title and read more link color options
-* Shortcode: Added option to hide/show title
-* Shortcode: Added option for featured image size
-* Shortcode: Added option to change HTML tag for episode title
-* Shortcode: Last generated shortcode will now be saved for later use
-* Shortcode: Preview generated shortcode
-* Shortcode: Episode featured image is now linked to the episode
-* Shortcode: Added load more option
-* Permalink redirect will now use the actual episode URL
-* Added support for dynamic show notes
-* Added duplicate episode feature
-* Added ability to deactivate/activate episode
-* Private, exclusive, and early access episodes will not appear on front-end queries and searches
-* Add/Remove Podcasts now lets you set a default author for each podcast
-* Manual sync for each podcast
-* Clear auto-saved data for each podcast
-* Implemented additional measures to prevent creating duplicate episodes, such as using additional unique identifier for each episode
-* Podcasts database table converted to utf8mb4 (upon re-activation of the plugin) to store any Unicode character
-* PHP version 8.0.0 compatibility
-* Bug fixes and enhancements
+* Settings: Ability to display artwork in place of the featured image.
+* Settings: Ability to display season and episode number with the episode title.
+* Shortcode: Ability to select multiple podcasts and specific episodes.
+* Shortcode: Added title and read more link color options.
+* Shortcode: Added option to hide/show title.
+* Shortcode: Added option for featured image size.
+* Shortcode: Added option to change HTML tag for episode title.
+* Shortcode: Last generated shortcode will now be saved for later use.
+* Shortcode: Preview generated shortcode.
+* Shortcode: Episode featured image is now linked to the episode.
+* Shortcode: Added load more option.
+* Permalink redirect will now use the actual episode URL.
+* Added support for dynamic show notes.
+* Added duplicate episode feature.
+* Added ability to deactivate/activate episode.
+* Private, exclusive, and early access episodes will not appear on front-end queries and searches.
+* Add/Remove Podcasts now lets you set a default author for each podcast.
+* Manual sync for each podcast.
+* Clear auto-saved data for each podcast.
+* Implemented additional measures to prevent creating duplicate episodes, such as using additional unique identifier for each episode.
+* Podcasts database table converted to utf8mb4 (upon re-activation of the plugin) to store any Unicode character.
+* PHP version 8.0.0 compatibility.
+* Bug fixes and enhancements.
 
 = 2.0.26 =
 * Released on 14/10/2024

@@ -598,58 +598,67 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 
 			if ( isset( $_POST['_nonce'] ) && wp_verify_nonce( $_POST['_nonce'], '_cfm_nonce' ) ) {
 
-				if ( isset( $_POST['show_id'] ) && isset( $_POST['page_id'] ) ) {
+				if ( isset( $_POST['show_id'], $_POST['page_id'] ) ) {
 
-					$page_id =  sanitize_text_field( wp_unslash( $_POST['page_id'] ) );
+					$show_id = sanitize_text_field( wp_unslash( $_POST['show_id'] ) );
+					$page_id = absint( $_POST['page_id'] );
 
 					global $wpdb;
 					$table_name = $wpdb->prefix . 'cfm_shows';
 
-					$count = $wpdb->get_var("SELECT COUNT(*) FROM $table_name WHERE cfm_option = 'index_page' AND cfm_value = '$page_id' AND cfm_value <> '0'");
+					$count = $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT COUNT(*)
+							FROM $table_name
+							WHERE cfm_option = 'index_page'
+							AND cfm_value = %d
+							AND cfm_value <> 0",
+							$page_id
+						)
+					);
 
 					if ( $count > 0 ) {
 						$output = 'already_exists';
-					}
-					else {
+					} else {
 						$single_slug = CFMH_Hosting_Settings::get_settings( 'single_slug', 'captivate-podcast' );
+						$sync_slug = ( $page_id !== 0 )
+							? home_url( '/' . get_post_field( 'post_name', $page_id ) . '/' )
+							: home_url( '/' . $single_slug . '/' );
 
-						$sync_slug = ( $page_id != '0' ) ? get_bloginfo( 'url' ) . '/' . get_post_field( 'post_name', $page_id ) . '/' : get_bloginfo( 'url' ) . '/' . $single_slug . '/';
-						$index_page_info = array();
-						$index_page_info['captivate_sync_url'] = $sync_slug;
+						$index_page_info = [
+							'captivate_sync_url' => esc_url_raw( $sync_slug )
+						];
 
 						$update_index_page = wp_remote_request(
-							CFMH_API_URL . '/shows/' . $_POST['show_id'] . '/sync/url',
-							array(
+							CFMH_API_URL . '/shows/' . $show_id . '/sync/url',
+							[
 								'timeout' => 500,
 								'body'    => $index_page_info,
 								'method'  => 'PUT',
-								'headers' => array(
+								'headers' => [
 									'Authorization' => 'Bearer ' . get_transient( 'cfm_authentication_token' ),
-								),
-							)
+								],
+							]
 						);
 
-						// Debugging.
+						// Debugging
 						cfm_generate_log( 'SYNC INDEX PAGE URL', $update_index_page );
 
-						if ( ! is_wp_error( $update_index_page ) && 'Unauthorized' != $update_index_page['body'] && is_array( $update_index_page ) ) {
-
-							cfm_update_show_info( $_POST['show_id'], 'index_page', $page_id );
+						if (
+							! is_wp_error( $update_index_page ) &&
+							isset( $update_index_page['body'] ) &&
+							$update_index_page['body'] !== 'Unauthorized'
+						) {
+							cfm_update_show_info( $show_id, 'index_page', $page_id );
 
 							$output = 'success';
-
 						}
-
 					}
-
 				}
-
 			}
 
-			echo $output;
-
+			echo esc_html( $output );
 			wp_die();
-
 		}
 
 		/**
@@ -664,20 +673,26 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 
 			if ( isset( $_POST['_nonce'] ) && wp_verify_nonce( $_POST['_nonce'], '_cfm_nonce' ) ) {
 
-				if ( isset( $_POST['show_id'] ) && isset( $_POST['author_id'] ) ) {
+				if ( current_user_can( 'edit_others_posts' ) ) {
 
-					cfm_update_show_info( $_POST['show_id'], 'wp_author_id', $_POST['author_id'] );
+					if ( isset( $_POST['show_id'], $_POST['author_id'] ) ) {
 
-					$output = 'success';
+						$show_id   = sanitize_text_field( wp_unslash( $_POST['show_id'] ) );
+						$author_id = absint( $_POST['author_id'] );
 
+						if ( get_user_by( 'ID', $author_id ) !== false ) {
+							cfm_update_show_info( $show_id, 'wp_author_id', $author_id );
+
+							$output = 'success';
+						}
+					}
+				} else {
+					$output = 'You do not have permission to perform this action.';
 				}
-
 			}
 
-			echo $output;
-
+			echo esc_html( $output );
 			wp_die();
-
 		}
 
 		/**
@@ -692,20 +707,19 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 
 			if ( isset( $_POST['_nonce'] ) && wp_verify_nonce( $_POST['_nonce'], '_cfm_nonce' ) ) {
 
-				if ( isset( $_POST['show_id'] ) && isset( $_POST['display_episodes'] ) ) {
+				if ( isset( $_POST['show_id'], $_POST['display_episodes'] ) ) {
 
-					cfm_update_show_info( $_POST['show_id'], 'display_episodes', $_POST['display_episodes'] );
+					$show_id = sanitize_text_field( wp_unslash( $_POST['show_id'] ) );
+					$display_episodes = absint( $_POST['display_episodes'] );
+
+					cfm_update_show_info( $show_id, 'display_episodes', $display_episodes );
 
 					$output = 'success';
-
 				}
-
 			}
 
-			echo $output;
-
+			echo esc_html( $output );
 			wp_die();
-
 		}
 
 		/**
@@ -723,6 +737,7 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 				$season_episode_number_enable = cfm_get_show_info( $show_id, 'season_episode_number_enable' );
 				$season_episode_number_text = cfm_get_show_info( $show_id, 'season_episode_number_text' );
 				$bonus_trailer_text = cfm_get_show_info( $show_id, 'bonus_trailer_text' );
+				$episode_video_enable = cfm_get_show_info( $show_id, 'episode_video_enable' );
 				?>
 					<div class="row">
 						<div class="col-lg-6">
@@ -806,6 +821,31 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 						</div>
 					</div>
 
+					<hr class="mt-5 mb-5 mt-lg-7 mb-lg-7">
+
+					<div class="row">
+						<div class="col-lg-3 mb-3 mb-lg-0"><div class="cfm-field-heading"><strong>Episode Video</strong></div></div>
+						<div class="col-lg-9">
+							<div class="cfm-field">
+								<label>Show episode video when available</label>
+								<div class="form-group">
+									<div class="form-check form-check-inline">
+										<input type="radio" id="episode_video_default" name="episode_video" class="form-check-input" value="default" <?php echo ( '1' != $episode_video_enable && '0' != $episode_video_enable ) ? 'checked="checked"' : '' ; ?>>
+										<label class="form-check-label" for="episode_video_default">Default <small class="d-inline">(in settings)</small></label>
+									</div>
+									<div class="form-check form-check-inline">
+										<input type="radio" id="episode_video_yes" name="episode_video" class="form-check-input" value="1" <?php checked( $episode_video_enable, '1' ); ?>>
+										<label class="form-check-label" for="episode_video_yes">Yes</label>
+									</div>
+									<div class="form-check form-check-inline">
+										<input type="radio" id="episode_video_no" name="episode_video" class="form-check-input" value="0" <?php checked( $episode_video_enable, '0' ); ?>>
+										<label class="form-check-label" for="episode_video_no">No</label>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
 				<?php
 
 			?>
@@ -829,35 +869,36 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Shows' ) ) :
 			$output = 'Something went wrong! Please refresh the page and try again.';
 
 			if ( isset( $_POST['_nonce'] ) && wp_verify_nonce( $_POST['_nonce'], '_cfm_nonce' ) ) {
-
 				if ( isset( $_POST['show_id'] ) ) {
 
+					$show_id = sanitize_text_field( wp_unslash( $_POST['show_id'] ) );
+
 					if ( isset( $_POST['use_artwork'] ) ) {
-						cfm_update_show_info( $_POST['show_id'], 'use_artwork_as_featured_image', sanitize_text_field( wp_unslash( $_POST['use_artwork'] ) ) );
+						cfm_update_show_info( $show_id, 'use_artwork_as_featured_image', sanitize_text_field( wp_unslash( $_POST['use_artwork'] ) ) );
 					}
 
 					if ( isset( $_POST['se_num'] ) ) {
-						cfm_update_show_info( $_POST['show_id'], 'season_episode_number_enable', sanitize_text_field( wp_unslash( $_POST['se_num'] ) ) );
+						cfm_update_show_info( $show_id, 'season_episode_number_enable', sanitize_text_field( wp_unslash( $_POST['se_num'] ) ) );
 					}
 
 					if ( isset( $_POST['se_num_text'] ) ) {
-						cfm_update_show_info( $_POST['show_id'], 'season_episode_number_text', wp_unslash( wp_filter_kses( $_POST['se_num_text'] ) ) );
+						cfm_update_show_info( $show_id, 'season_episode_number_text', wp_filter_kses( wp_unslash( $_POST['se_num_text'] ) ) );
 					}
 
 					if ( isset( $_POST['bonus_trailer_text'] ) ) {
-						cfm_update_show_info( $_POST['show_id'], 'bonus_trailer_text', wp_unslash( wp_filter_kses( $_POST['bonus_trailer_text'] ) ) );
+						cfm_update_show_info( $show_id, 'bonus_trailer_text', wp_filter_kses( wp_unslash( $_POST['bonus_trailer_text'] ) ) );
+					}
+
+					if ( isset( $_POST['episode_video'] ) ) {
+						cfm_update_show_info( $show_id, 'episode_video_enable', sanitize_text_field( wp_unslash( $_POST['episode_video'] ) ) );
 					}
 
 					$output = 'success';
-
 				}
-
 			}
 
-			echo $output;
-
+			echo esc_html( $output );
 			wp_die();
-
 		}
 
 	}

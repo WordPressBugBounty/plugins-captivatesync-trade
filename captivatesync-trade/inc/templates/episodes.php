@@ -82,8 +82,8 @@
 									$cfm_episode_itunes_number 	= get_post_meta( $pid, 'cfm_episode_itunes_number', true );
 									$cfm_episode_expiration 	= get_post_meta( $pid, 'cfm_episode_expiration', true );
 									$cfm_episode_early_access_end_date 	= get_post_meta( $pid, 'cfm_episode_early_access_end_date', true );
-									$early_access = ( $cfm_episode_early_access_end_date ) ? '<i class="fal fa-calendar-clock me-1 cfmsync-tooltip" data-bs-placement="top" data-bs-html="true" title="This episode will release to your public feed on<br>' . date( 'F j, Y G:i', strtotime( $cfm_episode_early_access_end_date ) ) . '"></i>' : '';
-									$episode_private 			= ( '1' == get_post_meta( $pid, 'cfm_episode_private', true ) ) ? '<i class="fa-light fa-dot-circle cfmsync-tooltip" data-bs-placement="top" title="This episode will not display in your RSS feed, Captivate Sites, and Captivate Sync."></i>' : '';
+									$early_access = ( $cfm_episode_early_access_end_date ) ? '<i class="fal fa-calendar-clock me-1 cfmsync-tooltip me-1" data-bs-placement="top" data-bs-html="true" title="This episode will release to your public feed on<br>' . date( 'F j, Y G:i', strtotime( $cfm_episode_early_access_end_date ) ) . '"></i>' : '';
+									$episode_private 			= ( '1' == get_post_meta( $pid, 'cfm_episode_private', true ) ) ? '<i class="fa-light fa-dot-circle cfmsync-tooltip me-1" data-bs-placement="top" title="This episode will not display in your RSS feed, Captivate Sites, and Captivate Sync."></i>' : '';
 
 									$permalink = ( 'future' == $post_status || 'publish' == $post_status ) ? get_permalink( $pid ) : get_bloginfo( 'url' ) . '/?post_type=captivate_podcast&p=' . $pid . '&preview=true';
 									$cfm_episode_amie_status 	= get_post_meta( $pid, 'cfm_episode_amie_status', true );
@@ -93,7 +93,7 @@
 									// set the expiration tooltip.
 									if ( $cfm_episode_expiration ) {
 										$episode_expiration_date = date( 'F j, Y G:i', strtotime( $cfm_episode_expiration ) );
-										$episode_expiration = cfm_is_datetime_passed( $cfm_episode_expiration ) ? "<i class='fa-light fa-stopwatch cfmsync-tooltip' data-bs-placement='top' title='This episode expired on {$episode_expiration_date}'></i>" : "<i class='fa-light fa-stopwatch cfmsync-tooltip' data-bs-placement='top' data-bs-html='true' title='This episode will expire on<br> {$episode_expiration_date}'></i>";
+										$episode_expiration = cfm_is_datetime_passed( $cfm_episode_expiration ) ? "<i class='fa-light fa-stopwatch cfmsync-tooltip me-1' data-bs-placement='top' title='This episode expired on {$episode_expiration_date}'></i>" : "<i class='fa-light fa-stopwatch cfmsync-tooltip me-1' data-bs-placement='top' data-bs-html='true' title='This episode will expire on<br> {$episode_expiration_date}'></i>";
 									}
 									else {
 										$episode_expiration = '';
@@ -116,20 +116,20 @@
 
 									// set the complete status.
 									if ( 'Expired' == $cfm_episode_status ) {
-										$episode_status = "<span class='status expired'>{$episode_expiration}{$episode_private} Expired " . $cfm_episode_amie_status_icon . "</span>";
+										$episode_status = "<span class='status expired'>{$episode_expiration}{$episode_private}Expired " . $cfm_episode_amie_status_icon . "</span>";
 									}
 									elseif ( 'Early Access' == $cfm_episode_status ) {
-										$episode_status = "<span class='status early-access'>{$early_access}{$episode_expiration}{$episode_private} Early Access " . $cfm_episode_amie_status_icon . "</span>";
+										$episode_status = "<span class='status early-access'>{$early_access}{$episode_expiration}{$episode_private}Early Access " . $cfm_episode_amie_status_icon . "</span>";
 									}
 									elseif ( 'Exclusive' == $cfm_episode_status ) {
-										$episode_status = "<span class='status exclusive'><i class='fal fa-circle-star me-1'></i>{$episode_expiration}{$episode_private} Exclusive" . $cfm_episode_amie_status_icon . "</span>";
+										$episode_status = "<span class='status exclusive'><i class='fal fa-circle-star me-1'></i>{$episode_expiration}{$episode_private}Exclusive" . $cfm_episode_amie_status_icon . "</span>";
 									}
 									else {
 										if ( 'future' == $post_status ) {
-											$episode_status = "<span class='status scheduled'><i class='far fa-clock'></i>{$episode_expiration}{$episode_private} Scheduled" . $cfm_episode_amie_status_icon . "</span>";
+											$episode_status = "<span class='status scheduled'><i class='far fa-clock'></i>{$episode_expiration}{$episode_private}Scheduled" . $cfm_episode_amie_status_icon . "</span>";
 										}
 										elseif ( 'publish' == $post_status ) {
-											$episode_status = "<span class='status published'><i class='fa-light fa-circle-check'></i> {$episode_expiration}{$episode_private} Published" . $cfm_episode_amie_status_icon . "</span>";
+											$episode_status = "<span class='status published'><i class='fa-light fa-circle-check'></i> {$episode_expiration}{$episode_private}Published" . $cfm_episode_amie_status_icon . "</span>";
 										}
 										else {
 											$episode_status = "<span class='status " . esc_attr( $post_status ) . " text-capitalize'>{$episode_expiration}{$episode_private} " . esc_html( $post_status ) . $cfm_episode_amie_status_icon . "</span>";

@@ -9,8 +9,8 @@
 Contributors: Kieran McKeefery, Mark Asquith, Captivate Audio Ltd
 Tags: podcast, podcasting, podcaster, itunes, captivate, CaptivateFM, powerpress, blubrry, Buzzsprout, Libsyn
 Requires at least: 5.7.0
-Tested up to: 6.8
-Stable tag: 3.2.2</p>
+Tested up to: 6.8.3
+Stable tag: 3.3.1</p>
 
 <p>Captivate Sync™ is a WordPress plugin maintained and developed by Captivate, part of the Rebel Base Media family. With our background in Podcast Websites, WordPress development and podcast hosting, hundreds of independent podcasters trust Captivate Sync™ and Captivate to power their podcast brands everyday.</p>
 
@@ -128,6 +128,25 @@ Captivate Sync™ is our dedicated free plugin for self-hosted WordPress podcast
 
 <p>== Changelog ==</p>
 
+<p>= 3.3.1 =</p>
+<ul>
+	<li>Released on 21/01/2026</li>
+	<li>Bug Fix: Fixed an issue where episode videos conflicted with certain page builders.</li>
+</ul>
+
+<p>= 3.3.0 =</p>
+<ul>
+	<li>Released on 28/11/2025</li>
+	<li>Added support for custom taxonomies.</li>
+	<li>Episode artwork validation on publish/edit now uses the same validation rules as the new specification (dimensions, files size, and format).</li>
+	<li>Security Improvement: Addressed a vulnerability in the page mapping dropdown to prevent potential injection attacks.</li>
+	<li>Added YouTube video link display on the Edit Episode screen when a video is available.</li>
+	<li>Settings: Added an option to show or hide the episode video on single episode pages.</li>
+	<li>Bug fix: Resolved an issue where episode statuses — Exclusive, Early Access, and Expired — were not syncing correctly when updated in Captivate.</li>
+	<li>Bug Fix: Resolved an issue where the episode video was unintentionally removed when updating the episode in WordPress.</li>
+	<li>Minor UI improvements and additional small bug fixes.</li>
+</ul>
+
 <p>= 3.2.2 =</p>
 <ul>
 	<li>Released on 21/07/2025</li>
@@ -143,17 +162,17 @@ Captivate Sync™ is our dedicated free plugin for self-hosted WordPress podcast
 <p>= 3.2.0 =</p>
 <ul>
 	<li>Released on 15/04/2025</li>
-	<li>Security Improvement: Addressed a vulnerability in the shortcode load more implementation</li>
-	<li>Settings: Added an option to enable or disable automatic syncing of show information</li>
-	<li>Settings: Added an option to enable or disable automatic syncing of new episodes</li>
-	<li>Settings: Added an option to enable or disable automatic syncing of existing episodes</li>
+	<li>Security Improvement: Addressed a vulnerability in the shortcode load more implementation.</li>
+	<li>Settings: Added an option to enable or disable automatic syncing of show information.</li>
+	<li>Settings: Added an option to enable or disable automatic syncing of new episodes.</li>
+	<li>Settings: Added an option to enable or disable automatic syncing of existing episodes.</li>
 	<li>Settings: Added an option to display Captivate-generated show notes as WordPress content on individual episode pages (available soon).</li>
 	<li>Settings: Added an option to enable or disable clickable timestamps in the show notes.</li>
 	<li>Settings: Added an option to show or hide the transcript section on single episode pages.</li>
-	<li>Improved the podcast selection process during synchronization to prevent previously selected podcasts from being re-synced, reducing unnecessary database queries and improving overall site performance</li>
+	<li>Improved the podcast selection process during synchronization to prevent previously selected podcasts from being re-synced, reducing unnecessary database queries and improving overall site performance.</li>
 	<li>Separated automatic syncing of show information, new episodes, and existing episodes into individual WordPress scheduled tasks to reduce processing load.</li>
 	<li>Optimized episode list pagination in the admin area for enhanced performance and faster loading times.</li>
-	<li>Implemented caching for show information to reduce database queries</li>
+	<li>Implemented caching for show information to reduce database queries.</li>
 </ul>
 
 <p>= 3.1.0 =</p>

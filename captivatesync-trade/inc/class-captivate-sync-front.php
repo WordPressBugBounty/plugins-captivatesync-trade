@@ -453,6 +453,46 @@ if ( ! class_exists( 'CFMH_Hosting_Front' ) ) :
 		}
 
 		/**
+		 * Embed youtube video to content
+		 *
+		 * @since 3.2.3
+		 * @param string $content  Contents.
+		 * @return string
+		 */
+		public static function embed_episode_video( $content ) {
+			$post_id = get_the_ID();
+
+			if ( ! is_singular( 'captivate_podcast' ) ) {
+				return $content;
+			}
+
+			$episode_video_enable = CFMH_Hosting_Settings::get_settings( 'episode_video_enable', '' );
+			$cfm_show_id          = get_post_meta( $post_id, 'cfm_show_id', true );
+			$show_enable          = cfm_get_show_info( $cfm_show_id, 'episode_video_enable' );
+
+			if (
+				'1' !== $show_enable &&
+				( '0' === $show_enable || '1' !== $episode_video_enable )
+			) {
+				return $content;
+			}
+
+			$youtube_id = get_post_meta( $post_id, 'cfm_episode_youtube_video_id', true );
+
+			if ( ! $youtube_id ) {
+				return $content;
+			}
+
+			$video  = '<div class="cfm-video-iframe iframe-video">';
+			$video .= '<div id="youtube-' . esc_attr( $youtube_id ) . '" class="iframe-video__player">';
+			$video .= '<div class="iframe-video__container">';
+			$video .= '<iframe id="youtube-player" type="text/html" src="https://www.youtube.com/embed/' . esc_attr( $youtube_id ) . '?autoplay=0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope;" allowfullscreen></iframe>';
+			$video .= '</div></div></div>';
+
+			return $video . $content;
+		}
+
+		/**
 		 * Modify content output to translate dynamic text
 		 *
 		 * @since 3.0

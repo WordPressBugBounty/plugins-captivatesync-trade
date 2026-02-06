@@ -1394,12 +1394,14 @@
   margin: 0;
 }
 #wpbody-content .wrap .cfm-website-categories-wrap,
-#wpbody-content .wrap .cfm-website-tags-wrap {
+#wpbody-content .wrap .cfm-website-tags-wrap,
+#wpbody-content .wrap .cfm-website-taxonomy-wrap {
   height: 148px;
   overflow-y: auto;
 }
 #wpbody-content .wrap .cfm-website-categories-wrap li,
-#wpbody-content .wrap .cfm-website-tags-wrap li {
+#wpbody-content .wrap .cfm-website-tags-wrap li,
+#wpbody-content .wrap .cfm-website-taxonomy-wrap li {
   font-size: 14px;
 }
 #wpbody-content .wrap .cfm-content-spinner {

@@ -48,70 +48,69 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Episodes' ) ) :
 		 * @return string
 		 */
 		public static function share_episode() {
-
 			if ( ! isset( $_POST['_nonce'] ) || ! wp_verify_nonce( $_POST['_nonce'], '_cfm_nonce' ) ) {
-				echo '<div class="cfm-alert cfm-alert-error"><span class="alert-icon"></span> <span class="alert-text"><strong>ERROR:</strong> Something went wrong! Please refresh the page and try again.</span></div>';
-			}
-			else {
-				if ( ! get_transient( 'cfm_authentication_token' ) ) {
-					echo '<div class="cfm-alert cfm-alert-error"><span class="alert-icon"></span> <span class="alert-text"><strong>ERROR:</strong> No authorization.</span></div>';
-				}
-				else {
-					$pid = isset( $_POST['post_id'] ) ? sanitize_text_field( wp_unslash( $_POST['post_id'] ) ) : '';
-					$cfm_episode_id = get_post_meta( $pid, 'cfm_episode_id', true );
-					?>
-						<div class="row">
-							<div class="col-sm-12">
-								<label>Paste this link into your social posts</label>
-								<div id="clipboard-ep-link" class="text-copy">
-									<?php echo esc_url( CFMH_PLAYER_URL . '/episode/' . $cfm_episode_id ); ?>
-								</div>
-								<div class="text-end mt-2">
-									<a class="clipboard btn btn-outline-primary btn-sm" data-clipboard-target="#clipboard-ep-link" data-clipboard-response="Your player URL has been copied to your clipboard.">Copy</a>
-								</div>
-							</div>
-						</div>
-
-						<div class="row">
-							<div class="col-sm-12">
-								<label>Episode Web Page URL</label>
-								<div id="clipboard-ep-web" class="text-copy">
-									<?php echo esc_url( get_permalink( $pid ) ); ?>
-								</div>
-								<div class="text-end mt-2">
-									<a class="btn btn-outline-primary btn-sm mr-2" href="<?php echo esc_url( get_permalink( $pid ) ); ?>" target="_blank">View</a>
-									<a class="clipboard btn btn-outline-primary btn-sm" data-clipboard-target="#clipboard-ep-web" data-clipboard-response="Your website URL has been copied to your clipboard.">Copy</a>
-								</div>
-							</div>
-						</div>
-
-						<div class="row">
-							<div class="col-sm-12">
-								<label>Embed on another website</label>
-								<div id="clipboard-ep-embed" class="text-copy">
-									<?php echo esc_html( '<div style="width: 100%; height: 200px; margin-bottom: 20px; border-radius: 6px; overflow:hidden;"><iframe style="width: 100%; height: 200px;" frameborder="no" scrolling="no" seamless src="' . CFMH_PLAYER_URL . '/episode/' . $cfm_episode_id . '"></iframe></div>' ); ?>
-								</div>
-								<div class="text-end mt-2">
-									<a class="clipboard btn btn-outline-primary btn-sm" data-clipboard-target="#clipboard-ep-embed" data-clipboard-response="Your website embed code has been copied to your clipboard.">Copy</a>
-								</div>
-							</div>
-						</div>
-
-						<div class="row">
-							<div class="col-sm-12">
-								<label>Direct audio file URL</label>
-								<div id="clipboard-ep-audio" class="text-copy">
-									<?php echo esc_html( get_post_meta( $pid, 'cfm_episode_media_url', true ) ); ?>
-								</div>
-								<div class="text-end mt-2">
-									<a class="clipboard btn btn-outline-primary btn-sm" data-clipboard-target="#clipboard-ep-audio" data-clipboard-response="Your file URL has been copied to your clipboard.">Copy</a>
-								</div>
-							</div>
-						</div>
-					<?php
-				}
+				echo '<div class="cfm-alert cfm-alert-error"><span class="alert-icon"></span> <span class="alert-text">Something went wrong! Please refresh the page and try again.</span></div>';
+				wp_die();
 			}
 
+			$pid = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
+
+			if ( ! $pid || ! get_post( $pid ) ) {
+				echo '<div class="cfm-alert cfm-alert-error"><span class="alert-icon"></span> <span class="alert-text">Invalid episode.</span></div>';
+				wp_die();
+			}
+
+			$cfm_episode_id = get_post_meta( $pid, 'cfm_episode_id', true );
+			?>
+				<div class="row">
+					<div class="col-sm-12">
+						<label>Paste this link into your social posts</label>
+						<div id="clipboard-ep-link" class="text-copy">
+							<?php echo esc_url( CFMH_PLAYER_URL . '/episode/' . $cfm_episode_id ); ?>
+						</div>
+						<div class="text-end mt-2">
+							<a class="clipboard btn btn-outline-primary btn-sm" data-clipboard-target="#clipboard-ep-link" data-clipboard-response="Your player URL has been copied to your clipboard.">Copy</a>
+						</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-sm-12">
+						<label>Episode Web Page URL</label>
+						<div id="clipboard-ep-web" class="text-copy">
+							<?php echo esc_url( get_permalink( $pid ) ); ?>
+						</div>
+						<div class="text-end mt-2">
+							<a class="btn btn-outline-primary btn-sm mr-2" href="<?php echo esc_url( get_permalink( $pid ) ); ?>" target="_blank">View</a>
+							<a class="clipboard btn btn-outline-primary btn-sm" data-clipboard-target="#clipboard-ep-web" data-clipboard-response="Your website URL has been copied to your clipboard.">Copy</a>
+						</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-sm-12">
+						<label>Embed on another website</label>
+						<div id="clipboard-ep-embed" class="text-copy">
+							<?php echo esc_html( '<div style="width: 100%; height: 200px; margin-bottom: 20px; border-radius: 6px; overflow:hidden;"><iframe style="width: 100%; height: 200px;" frameborder="no" scrolling="no" seamless src="' . CFMH_PLAYER_URL . '/episode/' . $cfm_episode_id . '"></iframe></div>' ); ?>
+						</div>
+						<div class="text-end mt-2">
+							<a class="clipboard btn btn-outline-primary btn-sm" data-clipboard-target="#clipboard-ep-embed" data-clipboard-response="Your website embed code has been copied to your clipboard.">Copy</a>
+						</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-sm-12">
+						<label>Direct audio file URL</label>
+						<div id="clipboard-ep-audio" class="text-copy">
+							<?php echo esc_html( get_post_meta( $pid, 'cfm_episode_media_url', true ) ); ?>
+						</div>
+						<div class="text-end mt-2">
+							<a class="clipboard btn btn-outline-primary btn-sm" data-clipboard-target="#clipboard-ep-audio" data-clipboard-response="Your file URL has been copied to your clipboard.">Copy</a>
+						</div>
+					</div>
+				</div>
+			<?php
 			wp_die();
 		}
 
@@ -123,11 +122,11 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Episodes' ) ) :
 		 */
 		public static function toggle_episode() {
 
-			$output = '<strong>ERROR:</strong> Something went wrong! Please refresh the page and try again.';
+			$output = 'error';
 
 			if ( current_user_can( 'edit_posts' ) ) {
 
-				$pid = isset( $_POST['post_id'] ) ? sanitize_text_field( wp_unslash( $_POST['post_id'] ) ) : '';
+				$pid = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 
 				if ( isset( $_POST['_nonce'] ) && wp_verify_nonce( $_POST['_nonce'], 'toggle_post_' . $pid ) ) {
 
@@ -145,9 +144,7 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Episodes' ) ) :
 			}
 
 			echo $output;
-
 			wp_die();
-
 		}
 
 		/**
@@ -161,11 +158,11 @@ if ( ! class_exists( 'CFMH_Hosting_Manage_Episodes' ) ) :
 		 */
 		public static function delete_episode() {
 
-			$output = '<strong>ERROR:</strong> Something went wrong! Please refresh the page and try again.';
+			$output = 'error';
 
 			if ( current_user_can( 'delete_others_posts' ) ) {
 
-				$pid = isset( $_POST['post_id'] ) ? sanitize_text_field( wp_unslash( $_POST['post_id'] ) ) : '';
+				$pid = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 
 				if ( isset( $_POST['_nonce'] ) && wp_verify_nonce( $_POST['_nonce'], 'trash_post_' . $pid ) ) {
 

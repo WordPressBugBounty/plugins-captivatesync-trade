@@ -166,7 +166,8 @@ $(document).ready(function($) {
 			use_artwork  = $( 'input[name=use_artwork]:checked' ).val(),
 			se_num  = $( 'input[name=se_num]:checked' ).val(),
 			se_num_text  = $( 'input[name=se_num_text]' ).val(),
-			bonus_trailer_text  = $( 'input[name=bonus_trailer_text]' ).val();
+			bonus_trailer_text  = $( 'input[name=bonus_trailer_text]' ).val(),
+			episode_video  = $( 'input[name=episode_video]:checked' ).val();
 
 		$.ajax({
 			url: cfmsync.ajaxurl,
@@ -178,6 +179,7 @@ $(document).ready(function($) {
 				se_num: se_num,
 				se_num_text: se_num_text,
 				bonus_trailer_text: bonus_trailer_text,
+				episode_video: episode_video,
 				_nonce: cfmsync.ajaxnonce
 			},
 			beforeSend: function() {

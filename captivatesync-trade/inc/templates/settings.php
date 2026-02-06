@@ -27,6 +27,8 @@
 	$autosync_show_information = CFMH_Hosting_Settings::get_settings( 'autosync_show_information', '1' );
 	$autosync_new_episodes = CFMH_Hosting_Settings::get_settings( 'autosync_new_episodes', '1' );
 	$autosync_existing_episodes = CFMH_Hosting_Settings::get_settings( 'autosync_existing_episodes', '1' );
+
+	$episode_video_enable = CFMH_Hosting_Settings::get_settings( 'episode_video_enable', '0' );
 	?>
 
 	<div class="cfm-page-content">
@@ -184,6 +186,21 @@
 							</div>
 						</div>
 						<small>If set to <strong>Yes</strong>, the transcript (if available) will be displayed on the single episode page.</small>
+					</div>
+
+					<div class="cfm-field mt-4">
+						<label>Show episode video on episode pages</label>
+						<div class="form-group">
+							<div class="form-check form-check-inline">
+								<input type="radio" id="episode_video_enable_yes" name="episode_video_enable" class="form-check-input" value="1" <?php checked( $episode_video_enable, '1' ); ?>>
+								<label class="form-check-label" for="episode_video_enable_yes">Yes</label>
+							</div>
+							<div class="form-check form-check-inline">
+								<input type="radio" id="episode_video_enable_no" name="episode_video_enable" class="form-check-input" value="0" <?php checked( $episode_video_enable, '0' ); ?>>
+								<label class="form-check-label" for="episode_video_enable_no">No</label>
+							</div>
+						</div>
+						<small>If set to <strong>Yes</strong>, the episode video (if available) will be displayed on the single episode page.</small>
 					</div>
 				</div>
 			</div>

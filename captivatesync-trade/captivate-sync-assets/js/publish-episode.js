@@ -413,7 +413,7 @@ jQuery( document ).ready(function($) {
 		});
 	});
 
-	$(document).on('click', '.fake-dropzone.cfm-image-uploader .upload-new-image', function(e) {
+	$(document).on('click', '#cfm-artwork-uploader .upload-new-image, .fake-dropzone.cfm-image-uploader .upload-new-image', function(e) {
 		e.preventDefault();
 		var $this = $(this),
 			$uploader_wrap = $this.closest('.fake-dropzone'),
@@ -526,11 +526,18 @@ jQuery( document ).ready(function($) {
 			artwork_height = $( 'input[name=episode_artwork_height]' ).val(),
 			artwork_type = $( 'input[name=episode_artwork_type]' ).val(),
 			artwork_filesize = $( 'input[name=episode_artwork_filesize]' ).val();
-		if ( artwork_id != '' && ( artwork_width != artwork_height || ( artwork_width < 1400 || artwork_width > 3000 ) || ( artwork_height < 1400 || artwork_height > 3000 ) || artwork_filesize > 500000 || ( artwork_type != "image/jpeg" && artwork_type != "image/jpg" && artwork_type != "image/png" ) ) ) {
+		if ( artwork_id != '' &&
+			( artwork_width != 3000 ||
+			artwork_height != 3000 ||
+			artwork_filesize > 2097152 ||
+			( artwork_type != "image/jpeg" && artwork_type != "image/jpg" && artwork_type != "image/png" ) ) ) {
+
 			$('#cfm-artwork-uploader').addClass('invalid-control');
+
 			if ( ! $( '#cfm-artwork-uploader-error' ).length ) {
-				$( '<div id="cfm-artwork-uploader-error" class="invalid-feedback mt-4">Your artwork should be a minimum of 1,400 pixels square and a maximum of 3,000 pixels square with less than 500kb in filesize. Both height and width must be the same.</div>' ).insertAfter( '#cfm-artwork-uploader' );
+				$('<div id="cfm-artwork-uploader-error" class="invalid-feedback mt-4">Your artwork must be exactly 3,000 x 3,000 pixels and less than 2MB (ideally below 512kb) in filesize. Only JPG or PNG images are allowed.</div>').insertAfter('#cfm-artwork-uploader');
 			}
+
 			errors += 1;
 			error_feedback += '<br>Episode Artwork: Follow the artwork specifications, remove and reupload.<br>';
 		}

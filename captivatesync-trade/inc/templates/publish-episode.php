@@ -92,8 +92,10 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 	$episode_status = get_post_meta( $post_id, 'cfm_episode_status', true );
 	$episode_website_active = get_post_meta( $post_id, 'cfm_episode_website_active', true );
 
-
 	$exclusivity_date = get_post_meta( $post_id, 'cfm_episode_exclusivity_date', true );
+
+	$youtube_video_id = get_post_meta( $post_id, 'cfm_episode_youtube_video_id', true );
+	$youtube_video_title = get_post_meta( $post_id, 'cfm_episode_youtube_video_title', true );
 
 	$acf_option_field_value = get_post_meta( $post_id, 'acf_option_field_value', true );
 	$acf_option_field_label = get_post_meta( $post_id, 'acf_option_field_label', true );
@@ -559,10 +561,33 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 					</div>
 
 					<small class="d-block pt-3">Your artwork should be 3000px x 3000px, PNG or JPEG, and under 2MB in size. Please <a class="text-decoration-none" href="https://help.captivate.fm/en/articles/3315645-podcast-artwork-specifications" target="_blank">check out our help article for more details.</a></small>
+
+					<small class="d-block pt-3"><strong>Important:</strong> WordPress may automatically scale large images down to 2,560 pixels. To preserve the full 3,000 x 3,000 px image, ensure that large image scaling is disabled in WordPress.</small>
 				</div>
 			</div>
 
 			<hr class="mt-5 mb-5 mt-lg-7 mb-lg-7">
+
+			<?php if ( ! empty($youtube_video_id) ) : ?>
+				<div class="row">
+					<div class="col-lg-3 mb-3 mb-lg-0"><div class="cfm-field-heading"><strong>Episode Video</strong></div></div>
+					<div class="col-lg-9">
+						<?php if ( ! empty($youtube_video_title) ) : ?>
+							<label class="mb-3"><?php echo esc_attr($youtube_video_title); ?></label>
+						<?php endif; ?>
+
+						<?php if ( ! empty($youtube_video_id) ) :
+							$youtube_url = 'https://youtu.be/' . $youtube_video_id;
+							?>
+							<div class="cfm-field cfm-episode-video">
+								<a href="<?php echo esc_url($youtube_url); ?>" target="_blank"><?php echo esc_html($youtube_url); ?></a>
+							</div>
+						<?php endif; ?>
+					</div>
+				</div>
+
+				<hr class="mt-5 mb-5 mt-lg-7 mb-lg-7">
+			<?php endif; ?>
 
 			<div class="row">
 				<div class="col-lg-3 mb-3 mb-lg-0"><div class="cfm-field-heading"><strong>Episode SEO</strong></div></div>
@@ -665,7 +690,7 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 					<div class="row mt-4">
 						<div class="col-lg-6">
 							<div class="cfm-field cfm-field-list-check cfm-website-categories">
-								<label for="website_category">Website Categories</label>
+								<label for="website_category">Categories</label>
 
 								<div class="cfm-website-categories-wrap form-control">
 									<?php
@@ -729,7 +754,7 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 
 						<div class="col-lg-6">
 							<div class="cfm-field cfm-field-list-check cfm-website-tags">
-								<label for="website_tags">Website Tags</label>
+								<label for="website_tags">Tags</label>
 								<div class="cfm-website-tags-wrap form-control">
 									<?php
 									$tag_post_id = $post_id;
@@ -754,6 +779,96 @@ if ( ! current_user_can( 'manage_options' ) && (  empty( $user_shows ) || ( ! em
 							</div>
 						</div>
 					</div>
+
+					<?php
+					/** CUSTOM TAXONOMIES */
+					$tax_exclude = [ 'captivate_category', 'captivate_tag' ];
+					$taxonomies = get_object_taxonomies( 'captivate_podcast', 'objects' );
+
+					// Filter only taxonomies that have at least one term and are not excluded
+					$custom_taxonomies = array_filter( $taxonomies, function( $taxonomy ) use ( $tax_exclude ) {
+						if ( in_array( $taxonomy->name, $tax_exclude, true ) ) {
+							return false;
+						}
+
+						$terms = get_terms([
+							'taxonomy'   => $taxonomy->name,
+							'hide_empty' => false,
+						]);
+
+						return ! empty( $terms );
+					});
+
+					// Only display the row if at least one taxonomy exists
+					if ( ! empty( $custom_taxonomies ) ) :
+					?>
+
+					<div class="row">
+						<?php
+							foreach ( $custom_taxonomies as $taxonomy ) {
+								// Skip excluded taxonomies
+								if ( in_array( $taxonomy->name, [ 'captivate_tag', 'captivate_category' ], true ) ) {
+									continue;
+								}
+
+								// Skip taxonomy with no terms
+								if ( ! get_terms( [ 'taxonomy' => $taxonomy->name, 'hide_empty' => false ] ) ) {
+									continue;
+								}
+
+								$is_hierarchical = $taxonomy->hierarchical;
+								?>
+								<div class="col-lg-6 mt-4">
+									<div class="cfm-field cfm-field-list-check cfm-website-taxonomy-<?php echo esc_attr( $taxonomy->name ); ?>">
+
+										<label><?php echo esc_html( $taxonomy->label ); ?> <i>(Taxonomy)</i></label>
+
+										<?php if ( $is_hierarchical ) : ?>
+											<div class="cfm-website-taxonomy-wrap form-control">
+												<ul>
+													<?php
+													wp_terms_checklist( $post_id, [
+														'taxonomy'      => $taxonomy->name,
+														'checked_ontop' => false,
+													] );
+													?>
+												</ul>
+											</div>
+
+										<?php else : ?>
+											<div class="cfm-website-taxonomy-wrap form-control">
+												<ul>
+													<?php
+													$terms     = get_terms([
+														'taxonomy'   => $taxonomy->name,
+														'hide_empty' => false,
+													]);
+
+													$assigned  = wp_get_object_terms( $post_id, $taxonomy->name, [ 'fields' => 'ids' ] );
+
+													foreach ( $terms as $term ) :
+														$checked = in_array( $term->term_id, $assigned ) ? 'checked' : '';
+													?>
+														<li>
+															<label>
+																<input type="checkbox"
+																	name="tax_input[<?php echo esc_attr( $taxonomy->name ); ?>][]"
+																	value="<?php echo esc_attr( $term->term_id ); ?>"
+																	<?php echo $checked; ?>>
+																<?php echo esc_html( $term->name ); ?>
+															</label>
+														</li>
+													<?php endforeach; ?>
+												</ul>
+											</div>
+										<?php endif; ?>
+									</div>
+								</div>
+								<?php
+							}
+						?>
+					</div>
+					<?php endif; ?>
 
 					<div class="row mt-4">
 						<div class="col-lg-6">
