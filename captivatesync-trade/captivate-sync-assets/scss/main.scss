@@ -88,7 +88,8 @@
         height: 20px;
         min-width: 20px;
         &:checked {
-            background-color: #fff;
+            background-color: $primary-color;
+            border-color: $primary-color;
             &::before {
                 width: 18px;
                 height: 18px;

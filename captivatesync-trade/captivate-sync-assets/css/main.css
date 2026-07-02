@@ -85,7 +85,8 @@
   min-width: 20px;
 }
 #wpbody-content .wrap input[type=checkbox]:checked {
-  background-color: #fff;
+  background-color: #b866a3;
+  border-color: #b866a3;
 }
 #wpbody-content .wrap input[type=checkbox]:checked::before {
   width: 18px;
