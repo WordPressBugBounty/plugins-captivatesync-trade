@@ -34,17 +34,17 @@
     display: -ms-flexbox;
     display: flex;
     -webkit-box-pack: justify;
-        -ms-flex-pack: justify;
-            justify-content: space-between;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
     -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
+    -ms-flex-align: center;
+    align-items: center;
   }
   #wpbody-content .wrap .cfm-page-footer .footer-content .footer-left {
     text-align: left;
     -webkit-box-flex: 0;
-        -ms-flex: 0 0 200px;
-            flex: 0 0 200px;
+    -ms-flex: 0 0 200px;
+    flex: 0 0 200px;
   }
   #wpbody-content .wrap .cfm-page-footer .footer-content .footer-left p {
     margin-bottom: 5px;
@@ -52,8 +52,8 @@
   #wpbody-content .wrap .cfm-page-footer .footer-content .footer-right {
     text-align: right;
     -webkit-box-flex: 0;
-        -ms-flex: 0 0 calc(100% - 200px);
-            flex: 0 0 calc(100% - 200px);
+    -ms-flex: 0 0 calc(100% - 200px);
+    flex: 0 0 calc(100% - 200px);
   }
   #wpbody-content .wrap .cfm-page-footer .footer-content .footer-right a {
     margin-top: 0;
@@ -62,13 +62,13 @@
 @media (max-width: 1292px) {
   #wpbody-content .wrap .cfm-shows-list .datatable-row-group .datatable-actions {
     -webkit-box-flex: 0;
-        -ms-flex-positive: 0;
-            flex-grow: 0;
+    -ms-flex-positive: 0;
+    flex-grow: 0;
     -ms-flex-preferred-size: 100%;
-        flex-basis: 100%;
+    flex-basis: 100%;
     -webkit-box-pack: start;
-        -ms-flex-pack: start;
-            justify-content: flex-start;
+    -ms-flex-pack: start;
+    justify-content: flex-start;
     padding-left: 0;
   }
   #wpbody-content .wrap .cfm-shows-list .datatable-row-group .datatable-actions > div {
@@ -84,28 +84,28 @@
 @media (max-width: 991px) {
   #wpbody-content .wrap .cfm-page-heading .cfm-page-title {
     -webkit-box-flex: 0;
-        -ms-flex: 0 0 calc(100% - 129px);
-            flex: 0 0 calc(100% - 129px);
+    -ms-flex: 0 0 calc(100% - 129px);
+    flex: 0 0 calc(100% - 129px);
   }
   #wpbody-content .wrap .cfm-page-heading .cfm-page-title h1 {
     font-size: 20px;
   }
   #wpbody-content .wrap .cfm-page-heading .cfm-page-logo {
     -webkit-box-flex: 0;
-        -ms-flex: 0 0 40px;
-            flex: 0 0 40px;
+    -ms-flex: 0 0 40px;
+    flex: 0 0 40px;
     position: relative;
     overflow: hidden;
   }
   #wpbody-content .wrap .cfm-page-heading .cfm-page-logo img {
     width: 220px;
     -o-object-position: -10px 0;
-       object-position: -10px 0;
+    object-position: -10px 0;
   }
   #wpbody-content .wrap .cfm-page-heading.no-art .cfm-page-title {
     -webkit-box-flex: 0;
-        -ms-flex: 0 0 calc(100% - 40px);
-            flex: 0 0 calc(100% - 40px);
+    -ms-flex: 0 0 calc(100% - 40px);
+    flex: 0 0 calc(100% - 40px);
   }
   #wpbody-content .wrap .cfm-page-heading.no-art .cfm-page-title h1 {
     font-size: 22px;
@@ -113,10 +113,10 @@
   #wpbody-content .wrap .cfm-shows-list .datatable-row-group .datatable-body-cell {
     -webkit-box-orient: horizontal;
     -webkit-box-direction: normal;
-        -ms-flex-direction: row;
-            flex-direction: row;
+    -ms-flex-direction: row;
+    flex-direction: row;
     -ms-flex-wrap: wrap;
-        flex-wrap: wrap;
+    flex-wrap: wrap;
   }
   #wpbody-content .wrap .cfm-shows-list .datatable-row-group .datatable-body-cell > div {
     display: block;
@@ -131,8 +131,8 @@
     display: -ms-flexbox;
     display: flex;
     -webkit-box-pack: justify;
-        -ms-flex-pack: justify;
-            justify-content: space-between;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
   }
   #wpbody-content .wrap .cfm-shows-list .datatable-row-group .datatable-body-cell.datatable-actions .icon-actions .btn {
     margin: 0;
@@ -185,7 +185,7 @@
     width: 100%;
     margin: 15px 0;
     -webkit-box-sizing: border-box;
-            box-sizing: border-box;
+    box-sizing: border-box;
   }
   .cfm-data-table table.dataTable tbody td {
     padding: 15px 0;

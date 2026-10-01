@@ -483,17 +483,37 @@ jQuery( document ).ready(function($) {
 			errors += 1;
 			error_feedback += '<br>Episode Title: Check for any unusual or invalid characters, remove and resave.<br>';
 		}
-		if ( ( shownotes == '' || shownotes == '<p><br></p>' ) && $('.cfm-captivate-editor').is(":visible") && clicked_button != "episode_draft" ) {
-			$( '#cfm-field-wpeditor' ).addClass( 'invalid-control is-invalid' );
-			$( '.cfm-episode-shownotes .ql-toolbar.ql-snow' ).addClass('is-invalid');
-			if ( ! $( '#captivate-shownotes-error' ).length ) {
-				$( '<div id="captivate-shownotes-error" class="invalid-feedback">You must enter show notes for your episode.</div>' ).insertAfter( '#cfm-field-wpeditor' );
+		if ( $('.cfm-captivate-editor').is(":visible") ) {
+			$( '#cfm-field-wpeditor' ).removeClass('invalid-control is-invalid');
+			$( '.cfm-episode-shownotes .ql-toolbar.ql-snow' ).removeClass('is-invalid');
+
+			if ( shownotes == '' || shownotes == '<p><br></p>' ) {
+				$( '#cfm-field-wpeditor' ).addClass( 'invalid-control is-invalid' );
+				$( '.cfm-episode-shownotes .ql-toolbar.ql-snow' ).addClass('is-invalid');
+
+				if ( ! $( '#captivate-shownotes-error' ).length ) {
+					$( '<div id="captivate-shownotes-error" class="invalid-feedback">You must enter show notes for your episode.</div>' )
+						.insertAfter( '#cfm-field-wpeditor' );
+				}
+
+				errors += 1;
+				error_feedback += '<br>Episode Show NOTES: Check for any unusual or invalid characters, remove and resave.<br>';
 			}
-			errors += 1;
-			error_feedback += '<br>Episode Show NOTES: Check for any unusual or invalid characters, remove and resave.<br>';
+			else if ( shownotes.length > 19999 ) {
+				$( '#cfm-field-wpeditor' ).addClass( 'invalid-control is-invalid' );
+				$( '.cfm-episode-shownotes .ql-toolbar.ql-snow' ).addClass('is-invalid');
+
+				if ( ! $( '#captivate-shownotes-error' ).length ) {
+					$( '<div id="captivate-shownotes-error" class="invalid-feedback">Show notes cannot exceed 20,000 characters.</div>' )
+						.insertAfter( '#cfm-field-wpeditor' );
+				}
+
+				errors += 1;
+				error_feedback += '<br>Episode Show NOTES: Show notes cannot exceed 20,000 characters.<br>';
+			}
 		}
 
-		if ( $('.cfm-wordpress-editor').is(":visible") && clicked_button != "episode_draft" ) {
+		if ( $('.cfm-wordpress-editor').is(":visible") ) {
 
 			var wordpress_editor_shownotes = '';
 
@@ -512,6 +532,18 @@ jQuery( document ).ready(function($) {
 				}
 				errors += 1;
 				error_feedback += '<br>Episode Show NOTES: Check for any unusual or invalid characters, remove and resave.<br>';
+			}
+
+			if ( wordpress_editor_shownotes.length > 19999 ) {
+				$( '#wp-post_content_wp-wrap' ).addClass( 'invalid-control' );
+
+				$( '#wp-shownotes-error' ).remove();
+
+				$( '<div id="wp-shownotes-error" class="invalid-feedback">Show notes cannot exceed 20,000 characters.</div>' )
+					.insertAfter( '#wp-post_content_wp-wrap' );
+
+				errors += 1;
+				error_feedback += '<br>Episode Show NOTES: Show notes cannot exceed 20,000 characters.<br>';
 			}
 		}
 

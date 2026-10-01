@@ -1274,8 +1274,10 @@ if ( ! function_exists( 'cfm_sync_episodes' ) ) :
 					$update_post_data['post_status'] = cfm_get_episode_status($status);
 
 					// slug.
-					if ( $captivate_episodes_data[$cfm_episode_id]['slug'] && $captivate_episodes_data[$cfm_episode_id]['slug'] !== null && $captivate_episodes_data[$cfm_episode_id]['slug'] !== '0' ) {
-						$update_post_data['post_name'] = $captivate_episodes_data[$cfm_episode_id]['slug'];
+					$slug = $captivate_episodes_data[$cfm_episode_id]['slug'] ?? null;
+
+					if ($slug && $slug !== '0') {
+						$update_post_data['post_name'] = $slug;
 					}
 
 					// Update the post data.

@@ -758,128 +758,192 @@ if ( ! class_exists( 'CFMH_Hosting_Publish_Episode' ) ) :
 		 */
 		public static function duplicate_episode() {
 
-			$json['output'] = 'error';
-			$json['message'] = '<strong>ERROR:</strong> Something went wrong! Please refresh the page and try again.';
+			$json = array(
+				'output'  => 'error',
+				'message' => '<strong>ERROR:</strong> Something went wrong! Please refresh the page and try again.',
+			);
 
-			if ( current_user_can( 'edit_others_posts' ) ) {
+			if ( ! current_user_can( 'edit_others_posts' ) ) {
+				echo wp_json_encode( $json );
+				wp_die();
+			}
 
-				$pid = isset( $_POST['post_id'] ) ? sanitize_text_field( wp_unslash( $_POST['post_id'] ) ) : '';
-				$cfm_show_id = get_post_meta( $pid, 'cfm_show_id', true );
+			$pid = isset( $_POST['post_id'] ) ? absint( $_POST['post_id'] ) : 0;
 
-				if ( isset( $_POST['_nonce'] ) && wp_verify_nonce( $_POST['_nonce'], 'duplicate_post_' . $pid ) ) {
+			if ( ! $pid ) {
+				$json['message'] = '<strong>ERROR:</strong> Invalid post ID.';
+				echo wp_json_encode( $json );
+				wp_die();
+			}
 
-					global $wpdb;
+			// Verify nonce before doing anything with the request.
+			$nonce = isset( $_POST['_nonce'] )
+				? sanitize_text_field( wp_unslash( $_POST['_nonce'] ) )
+				: '';
 
-					// get post data.
-					$post = get_post( $pid );
+			if ( ! wp_verify_nonce( $nonce, 'duplicate_post_' . $pid ) ) {
+				$json['message'] = '<strong>ERROR:</strong> Security check failed.';
+				echo wp_json_encode( $json );
+				wp_die();
+			}
 
-					// if post data exists, create the post duplicate.
-					if ( isset( $post ) && $post != null ) {
+			global $wpdb;
 
-						if ( 'captivate_podcast' == $post->post_type ) {
+			$post = get_post( $pid );
 
-							$args = array(
-								'comment_status' => $post->comment_status,
-								'ping_status'    => $post->ping_status,
-								'post_author'    => $post->post_author,
-								'post_content'   => $post->post_content,
-								'post_excerpt'   => $post->post_excerpt,
-								'post_name'      => $post->post_name,
-								'post_parent'    => $post->post_parent,
-								'post_password'  => $post->post_password,
-								'post_status'    => 'draft',
-								'post_title'     => $post->post_title,
-								'post_type'      => $post->post_type,
-								'to_ping'        => $post->to_ping,
-								'menu_order'     => $post->menu_order
-							);
+			if ( ! $post ) {
+				$json['message'] = 'Episode creation failed, could not find original episode.';
+				echo wp_json_encode( $json );
+				wp_die();
+			}
 
-							// insert the post.
-							$new_post_id = wp_insert_post( $args );
+			if ( 'captivate_podcast' !== $post->post_type ) {
+				$json['message'] = 'Episode creation failed, invalid post type: ' . esc_html( $post->post_type );
+				echo wp_json_encode( $json );
+				wp_die();
+			}
 
-							// get all current post terms ad set them to the new post draft.
-							$taxonomies = get_object_taxonomies( $post->post_type ); // returns array of taxonomy names for post type, ex array("category", "post_tag");
-							foreach ( $taxonomies as $taxonomy ) {
-								$post_terms = wp_get_object_terms( $post_id, $taxonomy, array( 'fields' => 'slugs' ) );
-								wp_set_object_terms( $new_post_id, $post_terms, $taxonomy, false );
-							}
+			$cfm_show_id = get_post_meta( $pid, 'cfm_show_id', true );
 
-							// duplicate all post meta just in two SQL queries except some data.
-							$post_meta_infos = $wpdb->get_results("
-								SELECT meta_key, meta_value
-								FROM $wpdb->postmeta
-								WHERE post_id = $pid
-								AND (
-									meta_key <> 'enclosure'
-									AND meta_key <> '_useraudiourl'
+			$args = array(
+				'comment_status' => $post->comment_status,
+				'ping_status'    => $post->ping_status,
+				'post_author'    => $post->post_author,
+				'post_content'   => $post->post_content,
+				'post_excerpt'   => $post->post_excerpt,
+				'post_name'      => $post->post_name,
+				'post_parent'    => $post->post_parent,
+				'post_password'  => $post->post_password,
+				'post_status'    => 'draft',
+				'post_title'     => $post->post_title,
+				'post_type'      => $post->post_type,
+				'to_ping'        => $post->to_ping,
+				'menu_order'     => $post->menu_order,
+			);
 
-									AND meta_key <> 'cfm_episode_id'
-									AND meta_key <> 'cfm_episode_status'
-									AND meta_key <> 'cfm_episode_amie_status'
+			$new_post_id = wp_insert_post( $args, true );
 
-									AND meta_key <> 'cfm_episode_media_created_at'
-									AND meta_key <> 'cfm_episode_media_id'
-									AND meta_key <> 'cfm_episode_media_bit_rate'
-									AND meta_key <> 'cfm_episode_media_bit_rate_str'
-									AND meta_key <> 'cfm_episode_media_id3_size'
-									AND meta_key <> 'cfm_episode_media_name'
-									AND meta_key <> 'cfm_episode_media_size'
-									AND meta_key <> 'cfm_episode_media_type'
-									AND meta_key <> 'cfm_episode_media_url'
-									AND meta_key <> 'cfm_episode_media_shows_id'
-									AND meta_key <> 'cfm_episode_media_updated_at'
-									AND meta_key <> 'cfm_episode_media_users_id'
-									AND meta_key <> 'cfm_episode_media_duration'
-									AND meta_key <> 'cfm_episode_media_duration_str'
+			if ( is_wp_error( $new_post_id ) ) {
+				$json['message'] = 'Episode creation failed: ' . $new_post_id->get_error_message();
+				echo wp_json_encode( $json );
+				wp_die();
+			}
 
-									AND meta_key <> 'cfm_episode_artwork_id'
-									AND meta_key <> 'cfm_episode_artwork'
-									AND meta_key <> 'cfm_episode_artwork_width'
-									AND meta_key <> 'cfm_episode_artwork_height'
-									AND meta_key <> 'cfm_episode_artwork_type'
-									AND meta_key <> 'cfm_episode_artwork_filesize'
+			// Duplicate taxonomy terms.
+			$taxonomies = get_object_taxonomies( $post->post_type );
 
-									AND meta_key <> 'cfm_episode_transcript'
+			foreach ( $taxonomies as $taxonomy ) {
 
-									AND meta_key <> 'cfm_episode_expiration'
-									AND meta_key <> 'cfm_episode_early_access_end_date'
-									AND meta_key <> 'cfm_episode_exclusivity_date'
-								)
-							");
+				$post_terms = wp_get_object_terms(
+					$pid,
+					$taxonomy,
+					array(
+						'fields' => 'slugs',
+					)
+				);
 
-							if ( count( $post_meta_infos ) !=0 ) {
-								$sql_query = "INSERT INTO $wpdb->postmeta (post_id, meta_key, meta_value) ";
-								foreach ( $post_meta_infos as $meta_info ) {
-									$meta_key = $meta_info->meta_key;
-									$meta_value = addslashes($meta_info->meta_value);
-									$sql_query_sel[]= "SELECT $new_post_id, '$meta_key', '$meta_value'";
-								}
-								$sql_query.= implode( " UNION ALL ", $sql_query_sel );
-								$wpdb->query( $sql_query );
-							}
-
-							update_post_meta( $new_post_id, 'cfm_episode_duplicate', '1' );
-
-							$json['output'] = 'success';
-							$json['message'] = 'Draft episode created successfully.';
-							$json['redirect_url'] = admin_url( 'admin.php?page=cfm-hosting-edit-episode&show_id=' . $cfm_show_id . '&eid=' . $new_post_id );
-						}
-						else {
-							$json['message'] = 'Episode creation failed, invalid post type: ' . $post->post_type;
-						}
-					}
-					else {
-						$json['message'] = 'Episode creation failed, could not find original episode: ' . $pid;
-					}
-
+				if ( ! is_wp_error( $post_terms ) ) {
+					wp_set_object_terms(
+						$new_post_id,
+						$post_terms,
+						$taxonomy,
+						false
+					);
 				}
 			}
 
-			if ( ! empty( $_SERVER['HTTP_X_REQUESTED_WITH'] ) && strtolower( $_SERVER['HTTP_X_REQUESTED_WITH'] ) == 'xmlhttprequest' ) {
-				$output = json_encode( $json );
+			// Meta keys that should NOT be duplicated.
+			$excluded_meta_keys = array(
+				'enclosure',
+				'_useraudiourl',
+
+				'cfm_episode_id',
+				'cfm_episode_status',
+				'cfm_episode_amie_status',
+
+				'cfm_episode_media_created_at',
+				'cfm_episode_media_id',
+				'cfm_episode_media_bit_rate',
+				'cfm_episode_media_bit_rate_str',
+				'cfm_episode_media_id3_size',
+				'cfm_episode_media_name',
+				'cfm_episode_media_size',
+				'cfm_episode_media_type',
+				'cfm_episode_media_url',
+				'cfm_episode_media_shows_id',
+				'cfm_episode_media_updated_at',
+				'cfm_episode_media_users_id',
+				'cfm_episode_media_duration',
+				'cfm_episode_media_duration_str',
+
+				'cfm_episode_artwork_id',
+				'cfm_episode_artwork',
+				'cfm_episode_artwork_width',
+				'cfm_episode_artwork_height',
+				'cfm_episode_artwork_type',
+				'cfm_episode_artwork_filesize',
+
+				'cfm_episode_transcript',
+
+				'cfm_episode_expiration',
+				'cfm_episode_early_access_end_date',
+				'cfm_episode_exclusivity_date',
+			);
+
+			$placeholders = implode(
+				', ',
+				array_fill( 0, count( $excluded_meta_keys ), '%s' )
+			);
+
+			$sql = "
+				SELECT meta_key, meta_value
+				FROM {$wpdb->postmeta}
+				WHERE post_id = %d
+				AND meta_key NOT IN ($placeholders)
+			";
+
+			$query_args = array_merge(
+				array( $pid ),
+				$excluded_meta_keys
+			);
+
+			$post_meta_infos = $wpdb->get_results(
+				$wpdb->prepare( $sql, $query_args )
+			);
+
+			// Safely duplicate meta.
+			foreach ( $post_meta_infos as $meta_info ) {
+
+				$wpdb->insert(
+					$wpdb->postmeta,
+					array(
+						'post_id'    => $new_post_id,
+						'meta_key'   => $meta_info->meta_key,
+						'meta_value' => $meta_info->meta_value,
+					),
+					array(
+						'%d',
+						'%s',
+						'%s',
+					)
+				);
 			}
 
-			echo $output;
+			update_post_meta(
+				$new_post_id,
+				'cfm_episode_duplicate',
+				'1'
+			);
+
+			$json['output'] = 'success';
+			$json['message'] = 'Draft episode created successfully.';
+			$json['redirect_url'] = admin_url(
+				'admin.php?page=cfm-hosting-edit-episode'
+				. '&show_id=' . rawurlencode( $cfm_show_id )
+				. '&eid=' . absint( $new_post_id )
+			);
+
+			echo wp_json_encode( $json );
 
 			wp_die();
 		}

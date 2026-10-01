@@ -2,8 +2,8 @@
 Contributors: Kieran McKeefery, Mark Asquith, Captivate Audio Ltd
 Tags: podcast, podcasting, podcaster, itunes, captivate, CaptivateFM, powerpress, blubrry, Buzzsprout, Libsyn
 Requires at least: 5.7.0
-Tested up to: 7.0
-Stable tag: 3.3.2
+Tested up to: 7.1
+Stable tag: 3.3.3
 
 Captivate Sync™ is a WordPress plugin maintained and developed by Captivate, part of the Rebel Base Media family. With our background in Podcast Websites, WordPress development and podcast hosting, hundreds of independent podcasters trust Captivate Sync™ and Captivate to power their podcast brands everyday.
 
@@ -99,6 +99,13 @@ To install Captivate Sync™ manually, please follow these steps:
 2. List of your episodes that are synced to your website.
 
 == Changelog ==
+
+= 3.3.3 =
+* Released on 21/09/2026
+* Bug Fix: Fixed a PHP warning caused by a missing slug key when syncing episodes.
+* Updated show notes validation to display the correct error message for empty content or content exceeding the character limit.
+* Security Improvement: Fixed a SQL injection vulnerability in the podcast episode duplication functionality.
+* Improved database query handling by using WordPress's parameterized database APIs when copying episode metadata.
 
 = 3.3.2 =
 * Released on 02/07/2026

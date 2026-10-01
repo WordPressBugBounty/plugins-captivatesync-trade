@@ -4,11 +4,11 @@
   display: -ms-flexbox;
   display: flex;
   -ms-flex-wrap: wrap;
-      flex-wrap: wrap;
+  flex-wrap: wrap;
   width: 100%;
   -webkit-box-pack: start;
-      -ms-flex-pack: start;
-          justify-content: flex-start;
+  -ms-flex-pack: start;
+  justify-content: flex-start;
 }
 .cfm-episodes-grid:before, .cfm-episodes-grid:after {
   content: "";
@@ -21,8 +21,8 @@
   display: inline-block;
   width: 33.33%;
   -webkit-box-flex: 0;
-      -ms-flex: 0 1 33.33%;
-          flex: 0 1 33.33%;
+  -ms-flex: 0 1 33.33%;
+  flex: 0 1 33.33%;
   margin-bottom: 30px;
 }
 .cfm-episodes-grid .cfm-episode-wrap:before, .cfm-episodes-grid .cfm-episode-wrap:after {
@@ -33,32 +33,32 @@
 .cfm-episodes-grid.cfm-episodes-cols-2 .cfm-episode-wrap {
   width: 50%;
   -webkit-box-flex: 0;
-      -ms-flex: 0 1 50%;
-          flex: 0 1 50%;
+  -ms-flex: 0 1 50%;
+  flex: 0 1 50%;
 }
 .cfm-episodes-grid.cfm-episodes-cols-3 .cfm-episode-wrap {
   width: 33.33%;
   -webkit-box-flex: 0;
-      -ms-flex: 0 1 33.33%;
-          flex: 0 1 33.33%;
+  -ms-flex: 0 1 33.33%;
+  flex: 0 1 33.33%;
 }
 .cfm-episodes-grid.cfm-episodes-cols-4 .cfm-episode-wrap {
   width: 25%;
   -webkit-box-flex: 0;
-      -ms-flex: 0 1 25%;
-          flex: 0 1 25%;
+  -ms-flex: 0 1 25%;
+  flex: 0 1 25%;
 }
 .cfm-episodes-grid.cfm-episodes-cols-5 .cfm-episode-wrap {
   width: 20%;
   -webkit-box-flex: 0;
-      -ms-flex: 0 1 20%;
-          flex: 0 1 20%;
+  -ms-flex: 0 1 20%;
+  flex: 0 1 20%;
 }
 .cfm-episodes-grid.cfm-episodes-cols-6 .cfm-episode-wrap {
   width: 16.66%;
   -webkit-box-flex: 0;
-      -ms-flex: 0 1 16.66%;
-          flex: 0 1 16.66%;
+  -ms-flex: 0 1 16.66%;
+  flex: 0 1 16.66%;
 }
 .cfm-episodes-grid .cfm-episode-player {
   margin-bottom: 20px;
@@ -112,8 +112,8 @@
   float: right;
   max-width: 33%;
   -webkit-box-flex: 0;
-      -ms-flex: 0 1 33%;
-          flex: 0 1 33%;
+  -ms-flex: 0 1 33%;
+  flex: 0 1 33%;
 }
 .cfm-episodes-list .cfm-episode-image-right .cfm-episode-image {
   margin-bottom: 0;
@@ -123,8 +123,8 @@
   float: left;
   max-width: 33%;
   -webkit-box-flex: 0;
-      -ms-flex: 0 1 33%;
-          flex: 0 1 33%;
+  -ms-flex: 0 1 33%;
+  flex: 0 1 33%;
 }
 .cfm-episodes-list .cfm-episode-image-left .cfm-episode-image {
   margin-bottom: 0;
@@ -134,8 +134,8 @@
   float: left;
   max-width: 67%;
   -webkit-box-flex: 0;
-      -ms-flex: 0 1 67%;
-          flex: 0 1 67%;
+  -ms-flex: 0 1 67%;
+  flex: 0 1 67%;
 }
 .cfm-episodes-list .cfm-episode-content-right .cfm-episode-title h1, .cfm-episodes-list .cfm-episode-content-right .cfm-episode-title h2, .cfm-episodes-list .cfm-episode-content-right .cfm-episode-title h3, .cfm-episodes-list .cfm-episode-content-right .cfm-episode-title h4, .cfm-episodes-list .cfm-episode-content-right .cfm-episode-title h5, .cfm-episodes-list .cfm-episode-content-right .cfm-episode-title h6 {
   margin: 0;
@@ -144,8 +144,8 @@
   float: left;
   max-width: 67%;
   -webkit-box-flex: 0;
-      -ms-flex: 0 1 67%;
-          flex: 0 1 67%;
+  -ms-flex: 0 1 67%;
+  flex: 0 1 67%;
 }
 
 /* Pagination */
@@ -167,26 +167,26 @@
   .cfm-episodes-grid.cfm-episodes-cols-3 .cfm-episode-wrap {
     width: 50%;
     -webkit-box-flex: 0;
-        -ms-flex: 0 1 50%;
-            flex: 0 1 50%;
+    -ms-flex: 0 1 50%;
+    flex: 0 1 50%;
   }
   .cfm-episodes-grid.cfm-episodes-cols-4 .cfm-episode-wrap {
     width: 33.33%;
     -webkit-box-flex: 0;
-        -ms-flex: 0 1 33.33%;
-            flex: 0 1 33.33%;
+    -ms-flex: 0 1 33.33%;
+    flex: 0 1 33.33%;
   }
   .cfm-episodes-grid.cfm-episodes-cols-5 .cfm-episode-wrap {
     width: 33.33%;
     -webkit-box-flex: 0;
-        -ms-flex: 0 1 33.33%;
-            flex: 0 1 33.33%;
+    -ms-flex: 0 1 33.33%;
+    flex: 0 1 33.33%;
   }
   .cfm-episodes-grid.cfm-episodes-cols-6 .cfm-episode-wrap {
     width: 33.33%;
     -webkit-box-flex: 0;
-        -ms-flex: 0 1 33.33%;
-            flex: 0 1 33.33%;
+    -ms-flex: 0 1 33.33%;
+    flex: 0 1 33.33%;
   }
 }
 /* Small Devices, Tablets */
@@ -194,31 +194,31 @@
   .cfm-episodes-grid.cfm-episodes-cols-2 .cfm-episode-wrap {
     width: 100%;
     -webkit-box-flex: 0;
-        -ms-flex: 0 1 100%;
-            flex: 0 1 100%;
+    -ms-flex: 0 1 100%;
+    flex: 0 1 100%;
   }
   .cfm-episodes-grid.cfm-episodes-cols-3 .cfm-episode-wrap {
     width: 100%;
     -webkit-box-flex: 0;
-        -ms-flex: 0 1 100%;
-            flex: 0 1 100%;
+    -ms-flex: 0 1 100%;
+    flex: 0 1 100%;
   }
   .cfm-episodes-grid.cfm-episodes-cols-4 .cfm-episode-wrap {
     width: 100%;
     -webkit-box-flex: 0;
-        -ms-flex: 0 1 100%;
-            flex: 0 1 100%;
+    -ms-flex: 0 1 100%;
+    flex: 0 1 100%;
   }
   .cfm-episodes-grid.cfm-episodes-cols-5 .cfm-episode-wrap {
     width: 100%;
     -webkit-box-flex: 0;
-        -ms-flex: 0 1 100%;
-            flex: 0 1 100%;
+    -ms-flex: 0 1 100%;
+    flex: 0 1 100%;
   }
   .cfm-episodes-grid.cfm-episodes-cols-6 .cfm-episode-wrap {
     width: 100%;
     -webkit-box-flex: 0;
-        -ms-flex: 0 1 100%;
-            flex: 0 1 100%;
+    -ms-flex: 0 1 100%;
+    flex: 0 1 100%;
   }
 }
